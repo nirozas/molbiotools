@@ -1,0 +1,425 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html lang="en" xmlns="https://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>DNA Stats</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=us-ascii" />
+    <link rel="stylesheet" href="styles/stylesheet.css" type="text/css" />
+    <script type="text/javascript" src="scripts/sms_common.js"></script>
+    <script type="text/javascript" src="scripts/dna_stats.js"></script>
+  </head>
+
+  <body class="main" onload="document.main_form.main_submit.focus()">
+    <!-- MAIN TABLE -->
+
+    <table border="0" cellspacing="2" cellpadding="2">
+      <tbody>
+        <tr>
+          <td class="links">
+
+            <!-- INSERT LINKS -->
+            <div class="category">
+              Format Conversion
+            </div>
+
+            <div class="program">
+              <a
+                href="combine_fasta.html"
+                >-Combine FASTA</a
+              ><br />
+              <a
+                href="embl_fasta.html"
+                >-EMBL to FASTA</a
+              ><br />
+              <a
+                href="embl_feat.html"
+                >-EMBL Feature Extractor</a
+              ><br />
+              <a
+                href="embl_trans.html"
+                >-EMBL Trans Extractor</a
+              ><br />
+              <a
+                href="filter_dna.html"
+                >-Filter DNA</a
+              ><br />
+              <a
+                href="filter_protein.html"
+                >-Filter Protein</a
+              ><br />
+              <a
+                href="genbank_fasta.html"
+                >-GenBank to FASTA</a
+              ><br />
+              <a
+                href="genbank_feat.html"
+                >-GenBank Feature Extractor</a
+              ><br />
+              <a
+                href="genbank_trans.html"
+                >-GenBank Trans Extractor</a
+              ><br />
+              <a
+                href="one_to_three.html"
+                >-One to Three</a
+              ><br />
+              <a
+                href="range_extract_dna.html"
+                >-Range Extractor DNA</a
+              ><br />
+              <a
+                href="range_extract_protein.html"
+                >-Range Extractor Protein</a
+              ><br />
+              <a
+                href="rev_comp.html"
+                >-Reverse Complement</a
+              ><br />
+              <a
+                href="split_codons.html"
+                >-Split Codons</a
+              ><br />
+              <a
+                href="split_fasta.html"
+                >-Split FASTA</a
+              ><br />
+              <a
+                href="three_to_one.html"
+                >-Three to One</a
+              ><br />
+              <a
+                href="window_extract_dna.html"
+                >-Window Extractor DNA</a
+              ><br />
+              <a
+                href="window_extract_protein.html"
+                >-Window Extractor Protein</a
+              >
+            </div>
+
+            <div class="category">
+              Sequence Analysis
+            </div>
+
+            <div class="program">
+              <a
+                href="codon_plot.html"
+                >-Codon Plot</a
+              ><br />
+              <a
+                href="codon_usage.html"
+                >-Codon Usage</a
+              ><br />
+              <a
+                href="cpg_islands.html"
+                >-CpG Islands</a
+              ><br />
+              <a
+                href="dna_mw.html"
+                >-DNA Molecular Weight</a
+              ><br />
+              <a
+                href="dna_pattern.html"
+                >-DNA Pattern Find</a
+              ><br />
+              <a
+                href="dna_stats.html"
+                >-DNA Stats</a
+              ><br />
+              <a
+                href="fuzzy_search_dna.html"
+                >-Fuzzy Search DNA</a
+              ><br />
+              <a
+                href="fuzzy_search_protein.html"
+                >-Fuzzy Search Protein</a
+              ><br />
+              <a
+                href="ident_sim.html"
+                >-Ident and Sim</a
+              ><br />
+              <a
+                href="multi_rev_trans.html"
+                >-Multi Rev Trans</a
+              ><br />
+              <a
+                href="mutate_for_digest.html"
+                >-Mutate for Digest</a
+              ><br />
+              <a
+                href="orf_find.html"
+                >-ORF Finder</a
+              ><br />
+              <a
+                href="pairwise_align_codons.html"
+                >-Pairwise Align Codons</a
+              ><br />
+              <a
+                href="pairwise_align_dna.html"
+                >-Pairwise Align DNA</a
+              ><br />
+              <a
+                href="pairwise_align_protein.html"
+                >-Pairwise Align Protein</a
+              ><br />
+              <a
+                href="pcr_primer_stats.html"
+                >-PCR Primer Stats</a
+              ><br />
+              <a
+                href="pcr_products.html"
+                >-PCR Products</a
+              ><br />
+              <a
+                href="protein_gravy.html"
+                >-Protein GRAVY</a
+              ><br />
+              <a
+                href="protein_iep.html"
+                >-Protein Isoelectric Point</a
+              ><br />
+              <a
+                href="protein_mw.html"
+                >-Protein Molecular Weight</a
+              ><br />
+              <a
+                href="protein_pattern.html"
+                >-Protein Pattern Find</a
+              ><br />
+              <a
+                href="protein_stats.html"
+                >-Protein Stats</a
+              ><br />
+              <a
+                href="rest_digest.html"
+                >-Restriction Digest</a
+              ><br />
+              <a
+                href="rest_summary.html"
+                >-Restriction Summary</a
+              ><br />
+              <a
+                href="rev_trans.html"
+                >-Reverse Translate</a
+              ><br />
+              <a
+                href="translate.html"
+                >-Translate</a
+              >
+            </div>
+
+            <div class="category">
+              Sequence Figures
+            </div>
+
+            <div class="program">
+              <a
+                href="color_align_cons.html"
+                >-Color Align Conservation</a
+              ><br />
+              <a
+                href="color_align_prop.html"
+                >-Color Align Properties</a
+              ><br />
+              <a
+                href="group_dna.html"
+                >-Group DNA</a
+              ><br />
+              <a
+                href="group_protein.html"
+                >-Group Protein</a
+              ><br />
+              <a
+                href="primer_map.html"
+                >-Primer Map</a
+              ><br />
+              <a
+                href="rest_map.html"
+                >-Restriction Map</a
+              ><br />
+              <a
+                href="trans_map.html"
+                >-Translation Map</a
+              >
+            </div>
+
+            <div class="category">
+              Random Sequences
+            </div>
+
+            <div class="program">
+              <a
+                href="mutate_dna.html"
+                >-Mutate DNA</a
+              ><br />
+              <a
+                href="mutate_protein.html"
+                >-Mutate Protein</a
+              ><br />
+              <a
+                href="random_coding_dna.html"
+                >-Random Coding DNA</a
+              ><br />
+              <a
+                href="random_dna.html"
+                >-Random DNA Sequence</a
+              ><br />
+              <a
+                href="random_dna_regions.html"
+                >-Random DNA Regions</a
+              ><br />
+              <a
+                href="random_protein.html"
+                >-Random Protein Sequence</a
+              ><br />
+              <a
+                href="random_protein_regions.html"
+                >-Random Protein Regions</a
+              ><br />
+              <a
+                href="sample_dna.html"
+                >-Sample DNA</a
+              ><br />
+              <a
+                href="sample_protein.html"
+                >-Sample Protein</a
+              ><br />
+              <a
+                href="shuffle_dna.html"
+                >-Shuffle DNA</a
+              ><br />
+              <a
+                href="shuffle_protein.html"
+                >-Shuffle Protein</a
+              >
+            </div>
+
+            <div class="category">
+              Miscellaneous
+            </div>
+
+            <div class="program">
+              <a
+                href="index.html"
+                >-Home</a
+              ><br />
+              <a
+                href="iupac.html"
+                >-IUPAC codes</a
+              ><br />
+              <a
+                href="genetic_code.html"
+                >-Genetic codes</a
+              ><br />
+              <a
+                href="browser_compat.html"
+                >-Browser compatibility</a
+              ><br />
+              <a
+                href="mirror.html"
+                >-Mirror this site</a
+              ><br />
+              <a
+                href="mirror.html"
+                >-Use this site off-line</a
+              ><br />
+              <a
+                href="about.html"
+                >-About this site</a
+              ><br />
+              <a
+                href="acknowledgments.html"
+                >-Acknowledgments</a
+              ><br />
+              <a
+                href="reference.html"
+                >-Reference</a
+              >
+            </div>
+            <!-- END INSERT LINKS -->
+
+            <div class="copyright">
+              <br />
+              The Sequence Manipulation Suite Copyright &copy; 2000, 2004 Paul
+              Stothard. Send questions and comments to stothard@ualberta.ca
+            </div>
+
+            <center>
+              <div class="program">
+                <a href="index.html" target="_top">home</a>
+              </div>
+            </center>
+          </td>
+          <!-- PROGRAM CONTENT -->
+
+          <td class="program">
+            <table border="0" cellspacing="0" cellpadding="2">
+              <tbody>
+                <tr>
+                  <td class="sms">Sequence Manipulation Suite:</td>
+                </tr>
+
+                <tr>
+                  <td class="title">DNA Stats</td>
+                </tr>
+
+                <tr>
+                  <td class="description">
+                    DNA Stats returns the number of occurrences of each residue
+                    in the sequence you enter. Percentage totals are also given
+                    for each residue, and for certain groups of residues,
+                    allowing you to quickly compare the results obtained for
+                    different sequences.<br />
+                    <br />
+
+                    <form action="" name="main_form" id="main_form">
+                      Paste the raw sequence or one or more FASTA sequences into
+                      the text area below. Input limit is 500,000,000
+                      characters.<br />
+                      <textarea rows="6" cols="61">
+&gt;sample sequence
+gggggaaaaatttttcccccnnnnngggggaaaaatttttcccccnnnnn
+</textarea
+                      ><br />
+
+                      <input
+                        type="button"
+                        value="Submit"
+                        name="main_submit"
+                        onclick="try{dnaStats(document)} catch(e) {alert('The following error was encountered: ' + e);}"
+                      />
+                      <input
+                        type="button"
+                        value="Clear"
+                        onclick="document.forms[0].elements[0].value = ' '"
+                      />
+                      <input type="reset" value="Reset" />
+                    </form>
+                    *This page requires JavaScript. See
+                    <a href="browser_compat.html">browser compatibility.</a
+                    ><br />
+                    *You can <a href="mirror.html">mirror this page</a> or
+                    <a href="mirror.html">use it off-line</a>.<br />
+                    <br />
+
+                    <center>
+                      <a href="dna_stats.html" target="_blank">new window</a> |
+                      <a href="index.html">home</a> |
+                      <a href="reference.html">citation</a>
+                    </center>
+                    <span class="version">Sun  1 Oct 12:00:06 2023</span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td><span class="valid">Valid XHTML 1.0; Valid CSS</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- MAIN TABLE END -->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
