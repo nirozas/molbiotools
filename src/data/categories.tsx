@@ -24,7 +24,7 @@ export const categories: Category[] = [
         tools: [
           { name: "Reverse Complement", description: "Generate reverse complement of a DNA sequence", type: "internal", href: "/tools/run/reverse-complement", badge: "NEW" },
           { name: "GC Content Calculator", description: "Calculate GC percentage and base composition", type: "internal", href: "/tools/run/gc-content" },
-          { name: "Sequence Statistics", description: "Length, composition, and melting temperature", type: "internal", href: "/tools/run/gc-content" },
+          { name: "Sequence Statistics", description: "Length, composition, and melting temperature", type: "internal", href: "/tools/run/sequence-statistics" },
         ],
       },
       {
@@ -63,8 +63,8 @@ export const categories: Category[] = [
         name: "Transcription",
         tools: [
           { name: "DNA to RNA Transcription", description: "Convert DNA template to mRNA sequence", type: "internal", href: "/tools/run/transcription" },
-          { name: "ORF Finder", description: "Identify open reading frames in RNA", type: "internal", href: "/tools/run/transcription" },
-          { name: "Codon Usage Table", description: "Analyze codon frequency in transcripts", type: "internal", href: "/tools/run/transcription" },
+          { name: "ORF Finder", description: "Identify open reading frames in RNA", type: "internal", href: "/tools/run/orf-finder" },
+          { name: "Codon Usage Table", description: "Analyze codon frequency in transcripts", type: "internal", href: "/tools/run/codon-usage" },
         ],
       },
       {
@@ -95,8 +95,8 @@ export const categories: Category[] = [
         name: "Translation",
         tools: [
           { name: "Protein Translation", description: "Translate coding sequence to amino acids", type: "internal", href: "/tools/run/translation" },
-          { name: "Reverse Translation", description: "Reverse-translate protein to DNA (+ codon opt.)", type: "internal", href: "/tools/run/translation", badge: "NEW" },
-          { name: "Amino Acid Properties", description: "MW, pI, GRAVY score, extinction coefficient", type: "internal", href: "/tools/run/translation" },
+          { name: "Reverse Translation", description: "Reverse-translate protein to DNA (+ codon opt.)", type: "internal", href: "/tools/run/rev-trans", badge: "NEW" },
+          { name: "Amino Acid Properties", description: "MW, pI, GRAVY score, extinction coefficient", type: "internal", href: "/tools/run/protein-stats" },
         ],
       },
       {

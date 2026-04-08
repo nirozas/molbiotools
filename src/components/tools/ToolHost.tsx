@@ -14,6 +14,8 @@ import {
   FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SMS2Bridge } from "@/lib/sms2/bridge";
+import { SMS2_TOOLS } from "@/lib/sms2/tools_bundle";
 
 interface ToolHostProps {
   toolId: string;
@@ -21,6 +23,32 @@ interface ToolHostProps {
   description: string;
   category: string;
 }
+
+const SMS2_MAPPING: Record<string, { script: string; entry: string }> = {
+  "dna-stats": { script: "dna_stats", entry: "dnaStats" },
+  "protein-stats": { script: "protein_stats", entry: "proteinStats" },
+  "translation": { script: "translate", entry: "translate" },
+  "transcription": { script: "translate", entry: "translate" },
+  "gc-content": { script: "dna_stats", entry: "dnaStats" },
+  "orf-finder": { script: "orf_find", entry: "orfFind" },
+  "codon-usage": { script: "codon_usage", entry: "codonUsage" },
+  "codon-plot": { script: "codon_plot", entry: "codonPlot" },
+  "cpg-islands": { script: "cpg_islands", entry: "cpgIslands" },
+  "dna-molecular-weight": { script: "dna_mw", entry: "dnaMw" },
+  "protein-molecular-weight": { script: "protein_mw", entry: "proteinMw" },
+  "protein-isoelectric-point": { script: "protein_iep", entry: "proteinIep" },
+  "protein-gravy": { script: "protein_gravy", entry: "proteinGravy" },
+  "restriction-digest": { script: "rest_digest", entry: "restDigest" },
+  "pcr-primer-stats": { script: "pcr_primer_stats", entry: "pcrPrimerStats" },
+  "sequence-statistics": { script: "dna_stats", entry: "dnaStats" },
+  "protein-translation": { script: "translate", entry: "translate" },
+  "reverse-complement": { script: "sms_common", entry: "reverse" },
+  "pairwise-alignment-dna": { script: "pairwise_align_dna", entry: "pairwiseAlignDna" },
+  "pairwise-alignment-protein": { script: "pairwise_align_protein", entry: "pairwiseAlignProtein" },
+  "ident-sim": { script: "ident_sim", entry: "identSim" },
+  "rev-trans": { script: "rev_trans", entry: "revTrans" },
+  "multi-rev-trans": { script: "multi_rev_trans", entry: "multiRevTrans" },
+};
 
 export default function ToolHost({ toolId, title, description, category }: ToolHostProps) {
   const [input, setInput] = useState("");
@@ -32,60 +60,64 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
     const cleanInput = input.trim().toUpperCase().replace(/[^A-Z]/g, "");
     if (!cleanInput) return;
 
+    if (SMS2_MAPPING[toolId]) {
+      const config = SMS2_MAPPING[toolId];
+      const bridge = new SMS2Bridge();
+      const env = bridge.getEnvironment();
+      
+      // Standard SMS2 form setup:
+      // elements[0] = sequence input
+      // elements[4,5,6] = typically dropdowns for genetic code, frames, etc.
+      // For now we mock these with common defaults
+      const doc = bridge.getMockDocument(input);
+      
+      // Add more fake elements if needed for specific tools
+      // This is a minimal mock for elements requested by legacy scripts
+      for (let i = 1; i < 10; i++) {
+        (doc.forms[0].elements as any)[i] = { 
+          value: "0", 
+          options: [{ value: "0" }], 
+          selectedIndex: 0 
+        };
+      }
+
+      try {
+        const common = SMS2_TOOLS["sms_common"];
+        const toolCode = SMS2_TOOLS[config.script];
+        
+        // Execute the script
+        const fullCode = `${common}\n${toolCode}\nreturn ${config.entry}(theDocument);`;
+        const runner = new Function("theDocument", "window", "document", "alert", "outputWindow", fullCode);
+        
+        runner(doc, env, doc, env.alert, env.outputWindow);
+        
+        const out = bridge.getOutput();
+        // Clean output: remove HTML tags for better display, or keep if we want rich text
+        const cleaned = out.content
+          .replace(/<br\s*\/?>/gi, "\n")
+          .replace(/<\/td><td>/gi, " | ")
+          .replace(/<[^>]*>/g, "")
+          .trim();
+          
+        setOutput(cleaned || out.content);
+        return;
+      } catch (err) {
+        console.error("SMS2 Run Error:", err);
+        setOutput("Analysis Error: " + (err as Error).message);
+        return;
+      }
+    }
+
     let result = "";
     let dataStats: any = null;
 
     switch (toolId) {
-      case "reverse-complement":
-        const complement: Record<string, string> = { A: "T", T: "A", C: "G", G: "C", N: "N" };
-        result = cleanInput
-          .split("")
-          .reverse()
-          .map(base => complement[base] || base)
-          .join("");
-        break;
-
-      case "gc-content":
-        const gCount = (cleanInput.match(/G/g) || []).length;
-        const cCount = (cleanInput.match(/C/g) || []).length;
-        const gc = ((gCount + cCount) / cleanInput.length) * 100;
-        result = `GC Content: ${gc.toFixed(2)}%\nTotal Bases: ${cleanInput.length}\nG: ${gCount}, C: ${cCount}`;
-        dataStats = { gc: gc.toFixed(1), total: cleanInput.length, comp: { G: gCount, C: cCount, A: (cleanInput.match(/A/g) || []).length, T: (cleanInput.match(/T/g) || []).length } };
-        break;
-
+      // Fallback for custom tools or those not in mapping
       case "transcription":
         result = cleanInput.replace(/T/g, "U");
         break;
-
-      case "translation":
-        const codonTable: Record<string, string> = {
-            'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
-            'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
-            'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
-            'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',
-            'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L',
-            'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P',
-            'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q',
-            'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R',
-            'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V',
-            'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A',
-            'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E',
-            'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
-            'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
-            'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
-            'TAC':'Y', 'TAT':'Y', 'TAA':'_', 'TAG':'_',
-            'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W',
-        };
-        let aa = "";
-        for (let i = 0; i < cleanInput.length - 2; i += 3) {
-            const codon = cleanInput.substring(i, i + 3);
-            aa += codonTable[codon] || "?";
-        }
-        result = aa;
-        break;
-
       default:
-        result = "Modular tool logic not yet implemented for this ID.";
+        result = "Modular tool logic not yet established for this ID. Functionality pending backend integration.";
     }
 
     setOutput(result);
