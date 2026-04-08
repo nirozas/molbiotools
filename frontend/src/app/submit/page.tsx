@@ -6,7 +6,7 @@ import {
   Plus, 
   Send, 
   Globe, 
-  Github, 
+  Code, 
   User, 
   School, 
   Info, 
@@ -199,7 +199,7 @@ export default function SubmitToolPage() {
                         onClick={() => setFormData({...formData, type: 'internal'})}
                         style={{ flex: 1, padding: "0.6rem", borderRadius: "8px", background: formData.type === 'internal' ? 'rgba(0, 212, 255, 0.1)' : 'transparent', color: formData.type === 'internal' ? accentColor : "#475569", border: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
                       >
-                        <Github size={14} /> GitHub
+                        <Code size={14} /> GitHub
                       </button>
                     </div>
                   </div>
