@@ -8,6 +8,7 @@
     "dev": "npm run dev:backend & npm run dev:frontend"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "next": "16.2.2"
   }
 }
