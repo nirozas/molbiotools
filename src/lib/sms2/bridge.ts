@@ -38,7 +38,7 @@ export class SMS2Bridge {
   // Global functions required by SMS2
   getEnvironment() {
     const bridge = this;
-    return {
+    const env: any = {
       outputWindow: {
         document: {
           write: (text: string) => { bridge.outputBuffer += text; },
@@ -50,8 +50,9 @@ export class SMS2Bridge {
       alert: (msg: string) => console.warn("SMS2 Alert:", msg),
       openWindow: (title: string) => { bridge.currentTitle = title; },
       closeWindow: () => {},
-      // Add other global mocks if needed
     };
+    env.open = () => env.outputWindow;
+    return env;
   }
 
   getOutput() {

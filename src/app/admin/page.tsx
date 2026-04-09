@@ -31,6 +31,7 @@ interface BugReport {
   status: 'pending' | 'resolved';
   timestamp: string;
   platform: string;
+  resolvedAt?: string;
 }
 
 export default function AdminPage() {
@@ -89,9 +90,22 @@ export default function AdminPage() {
       await axios.post(`${API_BASE}/admin/resolve-bug`, { id }, {
         headers: { 'x-admin-email': authEmail }
       });
-      setBugs(prev => prev.map(b => b.id === id ? { ...b, status: 'resolved' } : b));
+      setBugs(prev => prev.map(b => b.id === id ? { ...b, status: 'resolved', resolvedAt: new Date().toISOString() } : b));
     } catch (err) {
       alert("Failed to resolve bug");
+    }
+  };
+
+  const deleteBug = async (id: number) => {
+    if (!window.confirm("Are you sure you want to permanently delete this bug report?")) return;
+    const authEmail = localStorage.getItem("admin_email");
+    try {
+      await axios.post(`${API_BASE}/admin/delete-bug`, { id }, {
+        headers: { 'x-admin-email': authEmail }
+      });
+      setBugs(prev => prev.filter(b => b.id !== id));
+    } catch (err) {
+      alert("Failed to delete bug");
     }
   };
 
@@ -203,9 +217,9 @@ export default function AdminPage() {
                   bugs.map(bug => (
                     <div key={bug.id} style={{ background: "rgba(3, 7, 18, 0.4)", borderRadius: "16px", padding: "1.5rem", border: `1px solid ${bug.status === 'resolved' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)'}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1.5rem" }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.75rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
                           <span style={{ fontSize: "0.65rem", fontWeight: 900, background: bug.status === 'resolved' ? "rgba(16, 185, 129, 0.1)" : "rgba(244, 63, 94, 0.1)", color: bug.status === 'resolved' ? "#10b981" : "#f43f5e", padding: "0.25rem 0.6rem", borderRadius: "6px", textTransform: "uppercase" }}>{bug.status}</span>
-                          <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 600 }}>ID: {bug.id} · {new Date(bug.timestamp).toLocaleString()}</span>
+                          <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 600 }}>ID: {bug.id} · Reported: {new Date(bug.timestamp).toLocaleString()}{bug.status === 'resolved' && bug.resolvedAt ? ` · Resolved: ${new Date(bug.resolvedAt).toLocaleString()}` : ''}</span>
                         </div>
                         <p style={{ color: "#cbd5e1", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "0.5rem" }}>{bug.description}</p>
                         <div style={{ fontSize: "0.8rem", color: "#475569", display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -213,16 +227,22 @@ export default function AdminPage() {
                         </div>
                       </div>
                       
-                      {bug.status === 'pending' && (
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        {bug.status === 'pending' && (
+                          <button 
+                            onClick={() => resolveBug(bug.id)}
+                            style={{ padding: "0.6rem 1rem", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "10px", color: "#10b981", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                          >
+                            Resolve
+                          </button>
+                        )}
                         <button 
-                          onClick={() => resolveBug(bug.id)}
-                          style={{ padding: "0.6rem 1rem", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "10px", color: "#10b981", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(16, 185, 129, 0.2)"}
-                          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(16, 185, 129, 0.1)"}
+                          onClick={() => deleteBug(bug.id)}
+                          style={{ padding: "0.6rem 1rem", background: "rgba(244, 63, 94, 0.05)", border: "1px solid rgba(244, 63, 94, 0.15)", borderRadius: "10px", color: "#f43f5e", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
                         >
-                          Resolve Issue
+                          Delete
                         </button>
-                      )}
+                      </div>
                     </div>
                   ))
                 )}

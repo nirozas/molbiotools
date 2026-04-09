@@ -25,6 +25,7 @@ export const categories: Category[] = [
           { name: "Reverse Complement", description: "Generate reverse complement of a DNA sequence", type: "internal", href: "/tools/run/reverse-complement", badge: "NEW" },
           { name: "GC Content Calculator", description: "Calculate GC percentage and base composition", type: "internal", href: "/tools/run/gc-content" },
           { name: "Sequence Statistics", description: "Length, composition, and melting temperature", type: "internal", href: "/tools/run/sequence-statistics" },
+          { name: "DNA Concentration Calculator", description: "A260 absorbance to ng/µL concentration", type: "internal", href: "/tools/run/dna-concentration-calculator" },
         ],
       },
       {
@@ -72,6 +73,7 @@ export const categories: Category[] = [
         tools: [
           { name: "RNA Secondary Structure", description: "Predict mRNA folding and free energy (Mfold)", type: "external", href: "http://www.unafold.org/mfold/" },
           { name: "miRNA Target Predictor", description: "Find miRNA binding sites in 3' UTR", type: "external", href: "https://www.targetscan.org/" },
+          { name: "mRNA Optimization", description: "Folding, stability & translation potential (via dichlab)", type: "internal", href: "/tools/run/mrna-optimization", badge: "NEW" },
         ],
       },
       {
@@ -206,7 +208,6 @@ export const categories: Category[] = [
       {
         name: "Nucleic Acid",
         tools: [
-          { name: "DNA Concentration Calculator", description: "A260 absorbance to ng/µL concentration", type: "internal", href: "/tools/run/dna-concentration-calculator" },
           { name: "Tm Calculator", description: "Melting temperature for oligonucleotides", type: "internal", href: "/tools/run/tm-calculator" },
         ],
       },

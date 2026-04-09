@@ -57,13 +57,28 @@ const TOOL_METADATA: Record<string, { title: string; description: string; catego
     description: "Identify regions with high frequency of CpG sites as potential CpG islands.",
     category: "DNA Tools",
   },
+  "restriction-enzyme-analyzer": {
+    title: "Restriction Enzyme Analyzer",
+    description: "Find restriction sites in your sequence, formatted in a convenient table.",
+    category: "DNA Tools",
+  },
+  "ligation-calculator": {
+    title: "Ligation Calculator",
+    description: "Optimal insert:vector ratios and mass calculation for standard and custom molar ratios.",
+    category: "Lab Calculators",
+  },
+  "pairwise-alignment": {
+    title: "Pairwise Alignment",
+    description: "Align two sequences against each other using an optimized Needleman-Wunsch algorithm.",
+    category: "Alignment & BLAST",
+  },
 };
 
 export default function RunToolPage() {
   const { toolId } = useParams();
   const metadata = TOOL_METADATA[toolId as string] || {
     title: (toolId as string).replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    description: "Bioinformatics analysis utility. (Mock / Not yet established)",
+    description: "Bioinformatics analysis utility.",
     category: "Generic Tools",
   };
 

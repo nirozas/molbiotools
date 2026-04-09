@@ -408,8 +408,8 @@ export default function HomePage() {
       <section
         id="categories"
         style={{
-          padding: "6rem 1.5rem",
-          maxWidth: "1400px",
+          padding: "6rem 3rem",
+          maxWidth: "100%",
           margin: "0 auto",
         }}
       >
@@ -457,7 +457,7 @@ export default function HomePage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(max(320px, calc(33.333% - 1rem)), 1fr))",
             gap: "1.5rem",
           }}
         >

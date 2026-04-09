@@ -255,9 +255,24 @@ app.post('/api/admin/resolve-bug', adminAuth, (req, res) => {
     const bugFile = path.join(__dirname, 'bugs.json');
     if (fs.existsSync(bugFile)) {
         let bugs = JSON.parse(fs.readFileSync(bugFile, 'utf8'));
-        bugs = bugs.map(b => b.id === id ? { ...b, status: 'resolved' } : b);
+        bugs = bugs.map(b => b.id === id ? { ...b, status: 'resolved', resolvedAt: new Date().toISOString() } : b);
         fs.writeFileSync(bugFile, JSON.stringify(bugs, null, 2));
         return res.json({ success: true });
+    }
+    res.json({ success: false });
+});
+
+app.post('/api/admin/delete-bug', adminAuth, (req, res) => {
+    const { id } = req.body;
+    const bugFile = path.join(__dirname, 'bugs.json');
+    if (fs.existsSync(bugFile)) {
+        let bugs = JSON.parse(fs.readFileSync(bugFile, 'utf8'));
+        bugs = bugs.filter(b => b.id !== id);
+        fs.writeFileSync(bugFile, JSON.stringify(bugs, null, 2));
+        return res.json({ success: true });
+    }
+    res.json({ success: false });
+});
     }
     res.status(404).json({ error: 'Bug not found' });
 });
