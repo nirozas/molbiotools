@@ -1,6 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/tools/[categoryId]/page": "app/tools/[categoryId]/page.js",
-  "/tools/run/[toolId]/page": "app/tools/run/[toolId]/page.js"
-}

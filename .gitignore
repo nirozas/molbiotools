@@ -2,5 +2,8 @@ node_modules/
 node_modules_old/
 .env
 .next/
+.next_webpack/
 dist/
 build/
+archive_backend/backend/bugs.json
+archive_backend/backend/submissions.json
