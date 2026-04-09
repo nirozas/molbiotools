@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
-      <body className="min-h-full flex flex-col antialiased no-copy">
+      <body className="min-h-full flex flex-col antialiased">
         <CopyrightManager />
         {children}
       </body>

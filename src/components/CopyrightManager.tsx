@@ -4,6 +4,8 @@ import React, { useEffect } from "react";
 
 export default function CopyrightManager() {
   useEffect(() => {
+    // Copy protection disabled for development
+    /*
     const handleContextMenu = (e: MouseEvent) => {
       // Allow context menu only on specific allowed elements if needed
       if (!(e.target as HTMLElement).closest(".allow-context")) {
@@ -29,6 +31,7 @@ export default function CopyrightManager() {
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("keydown", handleKeyDown);
     };
+    */
   }, []);
 
   return null; // Side effect only component

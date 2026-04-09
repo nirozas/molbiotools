@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, Dna, Shield, Search, Settings } from "lucide-react";
+import { Menu, X, Dna, Shield, Search, Settings, Bug } from "lucide-react";
+import BugReportModal from "./BugReportModal";
 
 const navLinks = [
-  { label: "DNA Tools", href: "#dna" },
-  { label: "RNA Tools", href: "#rna" },
-  { label: "Protein Tools", href: "#protein" },
-  { label: "Metabolism", href: "#metabolism" },
-  { label: "Genomics", href: "#genomics" },
-  { label: "Immunology", href: "#immunology" },
-  { label: "About", href: "#about" },
+  { label: "DNA Tools", href: "/tools/dna" },
+  { label: "RNA Tools", href: "/tools/rna" },
+  { label: "Protein Tools", href: "/tools/protein" },
+  { label: "Metabolism", href: "/tools/metabolism" },
+  { label: "Genomics", href: "/tools/genomics" },
+  { label: "Immunology", href: "/tools/immunology" },
+  { label: "About", href: "/about" },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [bugOpen, setBugOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 30);
@@ -130,6 +132,38 @@ export default function Navbar() {
 
         {/* Right Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {/* Bug Report */}
+          <button
+            onClick={() => setBugOpen(true)}
+            style={{
+              background: "rgba(244,63,94,0.05)",
+              border: "1px solid rgba(244,63,94,0.15)",
+              borderRadius: "8px",
+              color: "#f43f5e",
+              width: "36px",
+              height: "36px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget;
+              el.style.background = "rgba(244,63,94,0.15)";
+              el.style.borderColor = "rgba(244,63,94,0.3)";
+              el.style.boxShadow = "0 0 15px rgba(244,63,94,0.2)";
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget;
+              el.style.background = "rgba(244,63,94,0.05)";
+              el.style.borderColor = "rgba(244,63,94,0.15)";
+              el.style.boxShadow = "none";
+            }}
+          >
+            <Bug size={16} />
+          </button>
+
           {/* Search Toggle */}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
@@ -257,6 +291,8 @@ export default function Navbar() {
           ))}
         </div>
       )}
+      {/* Bug Modal */}
+      <BugReportModal isOpen={bugOpen} onClose={() => setBugOpen(false)} />
     </nav>
   );
 }

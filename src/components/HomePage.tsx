@@ -28,6 +28,7 @@ import {
   Play,
   MousePointer2,
   Cpu,
+  Sparkles,
 } from "lucide-react";
 import CategoryCard, { Category } from "./CategoryCard";
 import Navbar from "./Navbar";
@@ -48,11 +49,11 @@ const categories = categoryData;
 // ============================================================
 const featuredTools = [
   { name: "MHC-I & II Peptide Binder", category: "Immunology · AI", href: "/mhc", color: "#8b5cf6" },
-  { name: "Reverse Complement", category: "DNA Tools", href: "#", color: "#00d4ff" },
-  { name: "Protein Translation", category: "Protein Tools", href: "#", color: "#10b981" },
-  { name: "Reverse Translation", category: "Protein Tools", href: "#", color: "#f59e0b" },
-  { name: "Buffer Calculator", category: "Lab Tools", href: "#", color: "#6366f1" },
-  { name: "CRISPR Guide RNA", category: "DNA Tools", href: "#", color: "#f43f5e" },
+  { name: "Reverse Complement", category: "DNA Tools", href: "/tools/run/reverse-complement", color: "#00d4ff" },
+  { name: "Protein Translation", category: "Protein Tools", href: "/tools/run/translation", color: "#10b981" },
+  { name: "Reverse Translation", category: "Protein Tools", href: "/tools/run/rev-trans", color: "#f59e0b" },
+  { name: "Buffer Calculator", category: "Lab Tools", href: "/tools/run/buffer-calculator", color: "#6366f1" },
+  { name: "CRISPR Guide RNA", category: "DNA Tools", href: "https://chopchop.cbu.uib.no/", color: "#f43f5e" },
 ];
 
 // ============================================================
@@ -461,9 +462,149 @@ export default function HomePage() {
           }}
         >
           {categories.map((cat) => (
-            <CategoryCard key={cat.id} category={cat} />
+            <div key={cat.id} id={cat.id}>
+              <CategoryCard category={cat} />
+            </div>
           ))}
         </div>
+
+        {/* ==================== SUBMIT A TOOL CTA BOX ==================== */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          style={{
+            marginTop: "4rem",
+            position: "relative",
+            borderRadius: "32px",
+            overflow: "hidden",
+            background: "rgba(10, 18, 38, 0.4)",
+            border: "1px solid rgba(0, 212, 255, 0.15)",
+            padding: "2.5rem 2rem",
+            textAlign: "center",
+          }}
+        >
+          {/* Animated background glow */}
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "120%",
+            height: "120%",
+            background: "radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(0, 212, 255, 0.05) 50%, transparent 70%)",
+            zIndex: 0,
+            pointerEvents: "none"
+          }} />
+
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(0, 212, 255, 0.1)",
+                border: "1px solid rgba(0, 212, 255, 0.2)",
+                width: "64px",
+                height: "64px",
+                borderRadius: "20px",
+                marginBottom: "1.25rem",
+                boxShadow: "0 0 30px rgba(0, 212, 255, 0.15)"
+              }}
+            >
+              <div style={{ position: "relative" }}>
+                <FlaskConical size={28} color="#00d4ff" />
+                <div style={{
+                  position: "absolute",
+                  top: "-8px",
+                  right: "-8px",
+                  background: "#7c3aed",
+                  borderRadius: "50%",
+                  width: "24px",
+                  height: "24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px solid #0a1226",
+                  boxShadow: "0 0 15px rgba(124, 58, 237, 0.5)"
+                }}>
+                  <Plus size={14} color="white" strokeWidth={3} />
+                </div>
+              </div>
+            </div>
+
+            <h2
+              style={{
+                fontFamily: "Space Grotesk, sans-serif",
+                fontSize: "2.2rem",
+                fontWeight: 800,
+                color: "#f0f6ff",
+                letterSpacing: "-0.02em",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Missing a <span className="gradient-text">Research Tool?</span>
+            </h2>
+
+            <p
+              style={{
+                color: "#94a3b8",
+                fontSize: "1rem",
+                lineHeight: 1.6,
+                maxWidth: "600px",
+                margin: "0 auto 2rem",
+              }}
+            >
+              Our platform is community-driven. If you've developed a script, found a 
+              useful bio-calculator, or want to integrate a specialized tool, share it 
+              with thousands of researchers worldwide.
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+              <a href="/submit" 
+                className="btn-primary" 
+                style={{ 
+                  textDecoration: "none", 
+                  padding: "1.2rem 2.5rem", 
+                  fontSize: "1rem"
+                }}
+              >
+                Submit New Tool
+                <ArrowRight size={18} style={{ marginLeft: "0.5rem" }} />
+              </a>
+              
+              <a href="https://github.com/nirozas/molbiotools" 
+                target="_blank" 
+                rel="noreferrer"
+                className="btn-secondary" 
+                style={{ 
+                  textDecoration: "none", 
+                  padding: "1.2rem 2rem", 
+                  fontSize: "1rem"
+                }}
+              >
+                <Code2 size={18} style={{ marginRight: "0.5rem" }} />
+                Contribute on GitHub
+              </a>
+            </div>
+            
+            <div style={{ marginTop: "2rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "2rem", opacity: 0.5 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+                <Zap size={14} color="#f59e0b" />
+                <span>Instant Review</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+                <Sparkles size={14} color="#00d4ff" />
+                <span>AI Distribution</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+                <Layers size={14} color="#10b981" />
+                <span>Open-Source</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* ==================== ADMIN SECTION ==================== */}

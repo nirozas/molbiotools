@@ -55,7 +55,17 @@ export default function CategoryCard({ category }: { category: Category }) {
       {/* Card Header */}
       <div style={{ padding: "1.5rem" }}>
         {/* Icon + Title Row */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", marginBottom: "1rem" }}>
+        <a 
+          href={`/tools/${category.id}`}
+          style={{ 
+            display: "flex", 
+            alignItems: "flex-start", 
+            gap: "1rem", 
+            marginBottom: "1rem",
+            textDecoration: "none",
+            cursor: "pointer"
+          }}
+        >
           <div
             className="category-icon-bg"
             style={{
@@ -79,7 +89,10 @@ export default function CategoryCard({ category }: { category: Category }) {
                 color: "#f0f6ff",
                 marginBottom: "0.3rem",
                 letterSpacing: "-0.01em",
+                transition: "color 0.2s"
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--cat-color)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#f0f6ff")}
             >
               {category.name}
             </h3>
@@ -87,7 +100,7 @@ export default function CategoryCard({ category }: { category: Category }) {
               {category.description}
             </p>
           </div>
-        </div>
+        </a>
 
         {/* Stats Row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
