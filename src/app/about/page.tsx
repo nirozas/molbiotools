@@ -3,7 +3,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
-import { Sparkles, Users, Lightbulb, Heart, Globe, Zap, ArrowRight, Beaker } from "lucide-react";
+import { Sparkles, Users, Lightbulb, Heart, Globe, Zap, ArrowRight, Beaker, Dna } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const MolecularBackground = dynamic(() => import("@/components/MolecularBackground"), {
