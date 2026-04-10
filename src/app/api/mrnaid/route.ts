@@ -8,11 +8,11 @@ const ORGANISM_MAP: Record<string, string> = {
   "Mus musculus": "m_musculus",
 };
 
-const CRITERION_MAP: Record<string, { CAI: boolean; dinucleotides: boolean; match_codon_pair: boolean }> = {
-  "Match codon usage":                   { CAI: false, dinucleotides: false, match_codon_pair: false },
-  "Maximize Codon Adaptation Index (CAI)": { CAI: true,  dinucleotides: false, match_codon_pair: false },
-  "Match dinucleotides usage":            { CAI: false, dinucleotides: true,  match_codon_pair: false },
-  "Match codon pair usage":               { CAI: false, dinucleotides: false, match_codon_pair: true  },
+const CRITERION_MAP: Record<string, string> = {
+  "Match codon usage": "codon_usage",
+  "Maximize Codon Adaptation Index (CAI)": "CAI",
+  "Match dinucleotides usage": "dinucleotides",
+  "Match codon pair usage": "codon_pair_usage",
 };
 
 export async function POST(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { mrnaConfig } = body as { mrnaConfig: any };
 
-    const criterionFlags = CRITERION_MAP[mrnaConfig.criterion] ?? CRITERION_MAP["Match codon usage"];
+    const optimization_criterion = CRITERION_MAP[mrnaConfig.criterion] ?? "codon_usage";
     const organism = ORGANISM_MAP[mrnaConfig.organism] ?? "h_sapiens";
 
     // Submit one job per sequence and collect all task IDs
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
           avoided_motifs: mrnaConfig.avoidMotifs
             ? mrnaConfig.avoidMotifs.split(/[\s,;]+/).filter(Boolean)
             : [],
-          codon_usage_frequency_threshold: 0.1,
+          codon_usage_frequency_threshold: parseFloat(mrnaConfig.threshold) || 0.1,
           max_GC_content: parseFloat(mrnaConfig.gcMax) / 100,
           min_GC_content: parseFloat(mrnaConfig.gcMin) / 100,
           GC_window_size: parseInt(mrnaConfig.gcWindow) || 100,
@@ -45,9 +45,7 @@ export async function POST(req: NextRequest) {
         },
         uridine_depletion: !!mrnaConfig.uridineDepletion,
         precise_MFE_algorithm: !!mrnaConfig.preciseMfe,
-        CAI: criterionFlags.CAI,
-        dinucleotides: criterionFlags.dinucleotides,
-        match_codon_pair: criterionFlags.match_codon_pair,
+        optimization_criterion,
         file_name: `seq${i + 1}`,
         sequences: {
           five_end_flanking_sequence: seq.utr5.trim().replace(/T/g, "U").toUpperCase(),
