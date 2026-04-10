@@ -104,8 +104,10 @@ const SIDEBAR_DATA = [
       {
         name: "Translation",
         tools: [
-          { name: "Protein Translation", href: "#", type: "internal" },
-          { name: "Reverse Translation", href: "#", type: "internal" },
+          { name: "Protein Translation", href: "/tools/run/translation", type: "internal" },
+          { name: "Reverse Translation", href: "/tools/run/rev-trans", type: "internal" },
+          { name: "AA Notation Converter", href: "/tools/run/aa-converter", type: "internal" },
+          { name: "Protein Property Visualizer", href: "/tools/run/protein-viewer", type: "internal" },
           { name: "Amino Acid Properties", href: "#", type: "internal" },
         ],
       },
@@ -120,7 +122,8 @@ const SIDEBAR_DATA = [
       {
         name: "Mutagenesis",
         tools: [
-          { name: "AA Silent Switch", href: "#", type: "internal" },
+          { name: "AA Silent Switch", href: "/tools/run/aa-silent-switch", type: "internal" },
+          { name: "AA Switcher", href: "/tools/run/aa-switcher", type: "internal" },
           { name: "Silent Mutator", href: "#", type: "internal" },
         ],
       },
@@ -301,19 +304,14 @@ function SubcategoryRow({
 
   return (
     <div>
-      <button
-        onClick={() => setOpen((p) => !p)}
+      <div
         style={{
           width: "100%",
           display: "flex",
           alignItems: "center",
           gap: "0.4rem",
-          padding: "0.35rem 0.5rem",
+          padding: "0.1rem 0.5rem",
           borderRadius: "6px",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          textAlign: "left",
           transition: "background 0.15s",
         }}
         onMouseEnter={(e) =>
@@ -324,15 +322,32 @@ function SubcategoryRow({
           ((e.currentTarget as HTMLElement).style.background = "none")
         }
       >
-        <ChevronDown
-          size={11}
+        <button
+          onClick={() => setOpen((p) => !p)}
           style={{
-            color: catColor,
-            flexShrink: 0,
-            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
-            transition: "transform 0.2s ease",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0.4rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "4px",
+            transition: "background 0.2s",
           }}
-        />
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+        >
+          <ChevronDown
+            size={11}
+            style={{
+              color: catColor,
+              flexShrink: 0,
+              transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+              transition: "transform 0.2s ease",
+            }}
+          />
+        </button>
         <span
           style={{
             fontSize: "0.72rem",
@@ -341,11 +356,13 @@ function SubcategoryRow({
             letterSpacing: "0.05em",
             textTransform: "uppercase",
             lineHeight: 1.3,
+            flex: 1,
+            cursor: "default"
           }}
         >
           {sub.name}
         </span>
-      </button>
+      </div>
 
       {open && (
         <div style={{ paddingLeft: "1.1rem", marginTop: "0.1rem" }}>
@@ -440,20 +457,17 @@ function CategoryRow({
 
   return (
     <div style={{ marginBottom: "0.25rem" }}>
-      <button
-        onClick={() => setOpen((p) => !p)}
+      <div
         style={{
           width: "100%",
           display: "flex",
           alignItems: "center",
-          gap: "0.6rem",
-          padding: "0.5rem 0.75rem",
+          gap: "0.2rem",
+          padding: "0.25rem 0.5rem",
           borderRadius: "10px",
           background: open ? cat.bg : "transparent",
-          border: "none",
-          cursor: "pointer",
-          textAlign: "left",
           transition: "all 0.2s ease",
+          position: "relative"
         }}
         onMouseEnter={(e) => {
           if (!open)
@@ -465,42 +479,72 @@ function CategoryRow({
             (e.currentTarget as HTMLElement).style.background = "transparent";
         }}
       >
-        <div
+        <Link
+          href={`/tools/${cat.id}`}
           style={{
-            width: "28px",
-            height: "28px",
-            borderRadius: "8px",
-            background: cat.bg,
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.6rem",
+            padding: "0.25rem 0.25rem",
+            textDecoration: "none",
+            cursor: "pointer",
+          }}
+        >
+          <div
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "8px",
+              background: cat.bg,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              border: `1px solid ${cat.color}25`,
+            }}
+          >
+            <Icon size={14} style={{ color: cat.color }} />
+          </div>
+          <span
+            style={{
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              color: open ? "#f0f6ff" : "#94a3b8",
+              flex: 1,
+              transition: "color 0.2s",
+            }}
+          >
+            {cat.name}
+          </span>
+        </Link>
+        <button
+          onClick={() => setOpen((p) => !p)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "0.5rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            border: `1px solid ${cat.color}25`,
+            borderRadius: "6px",
+            transition: "background 0.2s",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
         >
-          <Icon size={14} style={{ color: cat.color }} />
-        </div>
-        <span
-          style={{
-            fontSize: "0.82rem",
-            fontWeight: 700,
-            color: open ? "#f0f6ff" : "#94a3b8",
-            flex: 1,
-            transition: "color 0.2s",
-          }}
-        >
-          {cat.name}
-        </span>
-        <ChevronRight
-          size={13}
-          style={{
-            color: cat.color,
-            transform: open ? "rotate(90deg)" : "rotate(0deg)",
-            transition: "transform 0.2s ease",
-            flexShrink: 0,
-          }}
-        />
-      </button>
+          <ChevronRight
+            size={13}
+            style={{
+              color: cat.color,
+              transform: open ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
+            }}
+          />
+        </button>
+      </div>
 
       {open && (
         <div

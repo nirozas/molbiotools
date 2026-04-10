@@ -98,6 +98,8 @@ export const categories: Category[] = [
         tools: [
           { name: "Protein Translation", description: "Translate coding sequence to amino acids", type: "internal", href: "/tools/run/translation" },
           { name: "Reverse Translation", description: "Reverse-translate protein to DNA (+ codon opt.)", type: "internal", href: "/tools/run/rev-trans", badge: "NEW" },
+          { name: "AA Notation Converter", description: "Switch between 1-letter, 3-letter, and full name notations", type: "internal", href: "/tools/run/aa-converter", badge: "NEW" },
+          { name: "Protein Property Visualizer", description: "Map RasMol colors, liability sites, and hydrophobicity on sequence", type: "internal", href: "/tools/run/protein-viewer", badge: "NEW" },
           { name: "Amino Acid Properties", description: "MW, pI, GRAVY score, extinction coefficient", type: "internal", href: "/tools/run/protein-stats" },
         ],
       },
@@ -113,6 +115,7 @@ export const categories: Category[] = [
         name: "Mutagenesis",
         tools: [
           { name: "AA Silent Switch", description: "Find synonymous codon substitutions without AA change", type: "internal", href: "/tools/run/aa-silent-switch", badge: "NEW" },
+          { name: "AA Switcher", description: "Switch AAs and see required nucleotide changes in DNA", type: "internal", href: "/tools/run/aa-switcher", badge: "NEW" },
           { name: "Silent Mutator", description: "Introduce silent mutations to remove restriction sites", type: "internal", href: "/tools/run/silent-mutator" },
         ],
       },

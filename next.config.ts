@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Using default .next distDir for Vercel compatibility
+  distDir: '.next_temp',
   typescript: {
     ignoreBuildErrors: true,
   },

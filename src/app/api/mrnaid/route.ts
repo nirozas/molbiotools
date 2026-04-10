@@ -48,9 +48,9 @@ export async function POST(req: NextRequest) {
         optimization_criterion,
         file_name: `seq${i + 1}`,
         sequences: {
-          five_end_flanking_sequence: seq.utr5.trim().replace(/T/g, "U").toUpperCase(),
-          gene_of_interest: seq.cds.trim().toUpperCase(),
-          three_end_flanking_sequence: seq.utr3.trim().replace(/T/g, "U").toUpperCase(),
+          five_end_flanking_sequence: (seq.utr5.trim() || "A").replace(/T/g, "U").toUpperCase(),
+          gene_of_interest: seq.cds.trim().toUpperCase().replace(/T/g, "U"),
+          three_end_flanking_sequence: (seq.utr3.trim() || "A").replace(/T/g, "U").toUpperCase(),
         },
       };
 

@@ -13,8 +13,9 @@ export async function GET(
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
       return NextResponse.json(
-        { error: `Poll failed: ${response.status}` },
+        { error: `mRNAid task failed or crashed: ${response.status}`, details: errorText.slice(0, 500) },
         { status: 502 }
       );
     }
