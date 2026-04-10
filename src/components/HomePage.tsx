@@ -453,6 +453,86 @@ export default function HomePage() {
           </p>
         </div>
 
+        {/* Feature Banner: Cloning Viewer */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          style={{
+            marginBottom: "3rem",
+            background: "linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.05))",
+            border: "1px solid rgba(0, 212, 255, 0.15)",
+            borderRadius: "24px",
+            padding: "2rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "2rem",
+            position: "relative",
+            overflow: "hidden"
+          }}
+        >
+          {/* Shine effect */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: "-10%",
+            width: "50%",
+            height: "100%",
+            background: "linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.03), transparent)",
+            transform: "skewX(-20deg)",
+            pointerEvents: "none"
+          }} />
+
+          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flex: 1, minWidth: "300px" }}>
+            <div style={{ 
+              width: "60px", 
+              height: "60px", 
+              borderRadius: "16px", 
+              background: "rgba(0, 212, 255, 0.1)", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center",
+              color: "#00d4ff",
+              boxShadow: "0 0 20px rgba(0, 212, 255, 0.15)"
+            }}>
+              <Dna size={32} />
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "#7c3aed", background: "rgba(124, 58, 237, 0.1)", padding: "0.15rem 0.6rem", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Power Tool
+                </span>
+                <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#64748b" }}>NEW VERSION 1.0</span>
+              </div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "white", marginBottom: "0.4rem" }}>
+                Interactive <span className="gradient-text">Cloning Viewer</span> & Sequence Editor
+              </h3>
+              <p style={{ fontSize: "0.9rem", color: "#64748b", maxWidth: "500px" }}>
+                High-performance molecular editor with virtualization support for millions of base pairs. 
+                Identify features, manage annotations, and plan experiments.
+              </p>
+            </div>
+          </div>
+
+          <a 
+            href="/tools/cloning-viewer"
+            className="btn-primary"
+            style={{ 
+              textDecoration: "none", 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "0.6rem",
+              padding: "1rem 2rem",
+              borderRadius: "15px",
+              boxShadow: "0 10px 20px rgba(0, 212, 255, 0.15)"
+            }}
+          >
+            Open Viewer <ArrowRight size={18} />
+          </a>
+        </motion.div>
+
         {/* Category Grid */}
         <div
           style={{

@@ -273,9 +273,8 @@ app.post('/api/admin/delete-bug', adminAuth, (req, res) => {
     }
     res.json({ success: false });
 });
-    }
-    res.status(404).json({ error: 'Bug not found' });
-});
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
