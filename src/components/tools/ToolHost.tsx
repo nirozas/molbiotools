@@ -11,7 +11,8 @@ import {
   Check, 
   Activity,
   BarChart,
-  FileText
+  FileText,
+  Zap
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SMS2Bridge } from "@/lib/sms2/bridge";
@@ -37,7 +38,6 @@ const SMS2_MAPPING: Record<string, { script: string; entry: string }> = {
   "pcr-primer-stats": { script: "pcr_primer_stats", entry: "pcrPrimerStats" },
   "protein-translation": { script: "translate", entry: "translate" },
   "ident-sim": { script: "ident_sim", entry: "identSim" },
-  "rev-trans": { script: "rev_trans", entry: "revTrans" },
   "multi-rev-trans": { script: "multi_rev_trans", entry: "multiRevTrans" },
   "motif-finder": { script: "protein_pattern", entry: "proteinPattern" },
   "tm-calculator": { script: "pcr_primer_stats", entry: "pcrPrimerStats" },
@@ -74,6 +74,95 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
      entropyWindow: "30",
      numSequences: "1"
   });
+
+  // ===== Tm Calculator State =====
+  const [tmSeq, setTmSeq] = useState("");
+  const [tmNa, setTmNa] = useState("50");
+  const [tmConc, setTmConc] = useState("250");
+  const [tmDNA, setTmDNA] = useState("dna");
+  const [tmResult, setTmResult] = useState<any>(null);
+
+  // ===== Ta Calculator State =====
+  const [taFwd, setTaFwd] = useState("");
+  const [taRev, setTaRev] = useState("");
+  const [taInsert, setTaInsert] = useState("500");
+  const [taNa, setTaNa] = useState("50");
+  const [taResult, setTaResult] = useState<any>(null);
+
+  // ===== Molarity Calculator State =====
+  const [molMass, setMolMass] = useState("");
+  const [molMW, setMolMW] = useState("");
+  const [molVol, setMolVol] = useState("");
+  const [molConc, setMolConc] = useState("");
+  const [molSolveFor, setMolSolveFor] = useState<"conc"|"mass"|"vol">("conc");
+  const [molResult, setMolResult] = useState<any>(null);
+
+  // ===== Centrifugation Calculator State =====
+  const [centRpm, setCentRpm] = useState("");
+  const [centRcf, setCentRcf] = useState("");
+  const [centRadius, setCentRadius] = useState("90");
+  const [centSolveFor, setCentSolveFor] = useState<"rcf"|"rpm">("rcf");
+  const [centResult, setCentResult] = useState<any>(null);
+
+  // ===== Serial Dilution State =====
+  const [sdStart, setSdStart] = useState("1");
+  const [sdStartUnit, setSdStartUnit] = useState("mM");
+  const [sdFactor, setSdFactor] = useState("10");
+  const [sdSteps, setSdSteps] = useState("8");
+  const [sdVolume, setSdVolume] = useState("1");
+  const [sdResult, setSdResult] = useState<any[]>([]);
+
+  // ===== Unit Converter Biology State =====
+  const [ucValue, setUcValue] = useState("");
+  const [ucFromUnit, setUcFromUnit] = useState("µg");
+  const [ucMW, setUcMW] = useState("");
+  const [ucMolType, setUcMolType] = useState("DNA");
+  const [ucResult, setUcResult] = useState<any>(null);
+
+  // ===== Coding Capacity State =====
+  const [ccMode, setCcMode] = useState<"bp"|"aa"|"kda">("bp");
+  const [ccInput, setCcInput] = useState("");
+  const [ccResult, setCcResult] = useState<any>(null);
+
+  // ===== Buffer Calculator State =====
+  const [buffPka, setBuffPka] = useState("4.76"); // Acetate default
+  const [buffPh, setBuffPh] = useState("4.76");
+  const [buffTotal, setBuffTotal] = useState("100");
+  const [buffTotalUnit, setBuffTotalUnit] = useState("mM");
+  const [buffMode, setBuffMode] = useState<"ph"|"ratio">("ratio");
+  const [buffResult, setBuffResult] = useState<any>(null);
+
+  // ===== OD600 State =====
+  const [odVal, setOdVal] = useState("1.0");
+  const [odMolecule, setOdMolecule] = useState("E. coli");
+  const [odResult, setOdResult] = useState<any>(null);
+  // ===== Reverse Translation State =====
+  const [rtProtein, setRtProtein] = useState("");
+  const [rtSpecies, setRtSpecies] = useState("Human");
+  const [rtMode, setRtMode] = useState<"optimized"|"consensus">("optimized");
+  const [rtResult, setRtResult] = useState<any>(null);
+
+  // ===== Restriction Digest State =====
+  const [rdSeq, setRdSeq] = useState("");
+  const [rdSelected, setRdSelected] = useState<string[]>([]);
+  const [rdIsCircular, setRdIsCircular] = useState(false);
+  const [rdResult, setRdResult] = useState<any>(null);
+  const [rdLadder, setRdLadder] = useState("Life 1 kb Plus");
+  const [rdHighlighted, setRdHighlighted] = useState<number | null>(null);
+
+  const LADDERS: Record<string, number[]> = {
+    "Life 1 kb Plus": [12000, 11000, 10000, 9000, 8000, 7000, 6000, 5000, 4000, 3000, 2000, 1650, 1000, 850, 650, 500, 400, 300, 200, 100],
+    "NEB 2-Log": [10000, 8000, 6000, 5000, 4000, 3000, 2000, 1500, 1200, 1000, 900, 800, 700, 600, 500, 400, 300, 200, 100],
+    "GeneRuler 1 kb Plus": [20000, 10000, 7000, 5000, 4000, 3000, 2000, 1500, 1000, 700, 500, 400, 300, 200, 75],
+    "DNA-HindIII": [23130, 9416, 6557, 4361, 2322, 2027, 564, 125]
+  };
+
+  // ===== PCR Simulator State =====
+  const [pcrTemplate, setPcrTemplate] = useState("");
+  const [pcrFwd, setPcrFwd] = useState("");
+  const [pcrRev, setPcrRev] = useState("");
+  const [pcrKit, setPcrKit] = useState("Phusion (High-Fidelity)");
+  const [pcrResult, setPcrResult] = useState<any>(null);
 
   const runAnalysis = () => {
     // For calculators with custom UI state where 'input' string isn't used, we bypass the empty-check
@@ -585,14 +674,18 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
         }
         break;
       case "molarity-calculator":
-        // Input format: Mass(mg), MW(g/mol), Vol(ml)
-        const mArgs = input.split(",").map(Number);
-        if (mArgs.length >= 3) {
-          const molarity = mArgs[0] / (mArgs[1] * (mArgs[2] / 1000));
-          result = `Molarity: ${molarity.toFixed(4)} M`;
-        } else {
-          result = "Input format: Mass(mg), MW(g/mol), Volume(ml)";
-        }
+      case "centrifugation-calculator":
+      case "tm-calculator":
+      case "ta-calculator":
+      case "serial-dilution-planner":
+      case "unit-converter-biology":
+      case "coding-capacity":
+      case "buffer-calculator":
+      case "od600-cell-density":
+      case "rev-trans":
+      case "restriction-digest":
+      case "pcr-simulator":
+        // These tools use dedicated UI state — no text-input logic needed
         break;
       case "dna-concentration-calculator":
         const absDna = parseFloat(input);
@@ -600,16 +693,6 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
           result = `DNA Concentration: ${(absDna * 50).toFixed(2)} µg/mL (assuming dsDNA)`;
         } else {
           result = "Enter A260 absorbance value";
-        }
-        break;
-      case "centrifugation-calculator":
-        // Input: RPM, Radius(mm)
-        const cArgs = input.split(",").map(Number);
-        if (cArgs.length >= 2) {
-          const rcf = 1.118e-5 * cArgs[1] * Math.pow(cArgs[0], 2);
-          result = `Centrifugation Result:\nRCF (g): ${Math.round(rcf)}`;
-        } else {
-          result = "Input format: RPM, RotorRadius(mm) (e.g. 5000, 100)";
         }
         break;
       case "od600-cell-density":
@@ -664,7 +747,8 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
   };
 
   useEffect(() => {
-    if (toolId.includes("calculator")) {
+    const dedicatedUiTools = ["tm-calculator","ta-calculator","molarity-calculator","centrifugation-calculator","serial-dilution-planner","unit-converter-biology","coding-capacity","buffer-calculator","od600-cell-density","rev-trans","restriction-digest","pcr-simulator"];
+    if (toolId.includes("calculator") && !dedicatedUiTools.includes(toolId) && !["rev-trans", "restriction-digest", "pcr-simulator"].includes(toolId)) {
       // Trigger auto-calculate if there's enough numerical input
       const activeInputs = input.split(/[\s,]+/).filter(Boolean);
       if (activeInputs.length >= 3) {
@@ -678,6 +762,492 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
       }
     }
   }, [input, toolId, od260, naType, dilution]);
+
+  // ===== Tm Calculator Logic =====
+  const calcTm = () => {
+    const seq = tmSeq.toUpperCase().replace(/[^ATGCU]/g, "").replace(/U/g, "T");
+    if (seq.length < 4) { setTmResult({ error: "Sequence must be at least 4 bases." }); return; }
+    // Nearest-neighbor parameters (SantaLucia 1998, unified ΔH/ΔS)
+    const NN: Record<string, { dH: number; dS: number }> = {
+      "AA": { dH: -7.9, dS: -22.2 }, "AT": { dH: -7.2, dS: -20.4 },
+      "AC": { dH: -7.8, dS: -21.0 }, "AG": { dH: -7.8, dS: -21.0 },
+      "TA": { dH: -7.2, dS: -21.3 }, "TT": { dH: -7.9, dS: -22.2 },
+      "TC": { dH: -7.8, dS: -22.2 }, "TG": { dH: -8.5, dS: -22.7 },
+      "CA": { dH: -8.5, dS: -22.7 }, "CT": { dH: -7.8, dS: -21.0 },
+      "CC": { dH: -8.0, dS: -19.9 }, "CG": { dH: -10.6, dS: -27.2 },
+      "GA": { dH: -8.2, dS: -22.2 }, "GT": { dH: -8.4, dS: -22.4 },
+      "GC": { dH: -9.8, dS: -24.4 }, "GG": { dH: -8.0, dS: -19.9 },
+    };
+    let dHtot = 0, dStot = 0;
+    for (let i = 0; i < seq.length - 1; i++) {
+      const dinuc = seq[i] + seq[i + 1];
+      if (NN[dinuc]) { dHtot += NN[dinuc].dH; dStot += NN[dinuc].dS; }
+    }
+    // Initiation correction
+    const init5 = seq[0] === "G" || seq[0] === "C" ? { dH: 0.1, dS: -2.8 } : { dH: 2.3, dS: 4.1 };
+    const initEnd = seq[seq.length-1] === "G" || seq[seq.length-1] === "C" ? { dH: 0.1, dS: -2.8 } : { dH: 2.3, dS: 4.1 };
+    dHtot += init5.dH + initEnd.dH;
+    dStot += init5.dS + initEnd.dS;
+    const ct = parseFloat(tmConc) * 1e-9;  // nM → M
+    const R = 1.987; // cal/(mol·K)
+    const naConc = parseFloat(tmNa) * 1e-3; // mM → M
+    const dStotFull = dStot + R * Math.log(ct / 4);
+    const tmK = (dHtot * 1000) / dStotFull - 273.15;
+    // Salt correction (Owczarzy 2004)
+    const saltCorr = 16.6 * Math.log10(naConc);
+    const tmFinal = tmK + saltCorr;
+    const gc = (seq.match(/[GC]/g) || []).length;
+    const gcPct = ((gc / seq.length) * 100).toFixed(1);
+    const tmBasic = 2 * (seq.match(/[AT]/g) || []).length + 4 * gc;
+    setTmResult({ tmFinal: tmFinal.toFixed(1), tmBasic, gc, gcPct, len: seq.length, seq, dH: dHtot.toFixed(1), dS: dStot.toFixed(1) });
+  };
+
+  // ===== Ta Calculator Logic =====
+  const calcTmFromSeq = (seq: string, naConc: number): number => {
+    const s = seq.toUpperCase().replace(/[^ATGCU]/g, "").replace(/U/g, "T");
+    if (s.length < 4) return 0;
+    const NN: Record<string, { dH: number; dS: number }> = {
+      "AA": { dH: -7.9, dS: -22.2 }, "AT": { dH: -7.2, dS: -20.4 }, "AC": { dH: -7.8, dS: -21.0 }, "AG": { dH: -7.8, dS: -21.0 },
+      "TA": { dH: -7.2, dS: -21.3 }, "TT": { dH: -7.9, dS: -22.2 }, "TC": { dH: -7.8, dS: -22.2 }, "TG": { dH: -8.5, dS: -22.7 },
+      "CA": { dH: -8.5, dS: -22.7 }, "CT": { dH: -7.8, dS: -21.0 }, "CC": { dH: -8.0, dS: -19.9 }, "CG": { dH: -10.6, dS: -27.2 },
+      "GA": { dH: -8.2, dS: -22.2 }, "GT": { dH: -8.4, dS: -22.4 }, "GC": { dH: -9.8, dS: -24.4 }, "GG": { dH: -8.0, dS: -19.9 },
+    };
+    let dH = 0, dS = 0;
+    for (let i = 0; i < s.length - 1; i++) { const d = s[i]+s[i+1]; if (NN[d]) { dH += NN[d].dH; dS += NN[d].dS; } }
+    const init5 = s[0] === "G" || s[0] === "C" ? { dH: 0.1, dS: -2.8 } : { dH: 2.3, dS: 4.1 };
+    const initE = s[s.length-1] === "G" || s[s.length-1] === "C" ? { dH: 0.1, dS: -2.8 } : { dH: 2.3, dS: 4.1 };
+    dH += init5.dH + initE.dH; dS += init5.dS + initE.dS;
+    const R = 1.987; const ct = 250e-9;
+    const dSfull = dS + R * Math.log(ct / 4);
+    return (dH * 1000) / dSfull - 273.15 + 16.6 * Math.log10(naConc * 1e-3);
+  };
+  const calcTa = () => {
+    const fwd = taFwd.trim(); const rev = taRev.trim();
+    if (!fwd || !rev) { setTaResult({ error: "Please enter both primers." }); return; }
+    const na = parseFloat(taNa) || 50;
+    const ins = parseInt(taInsert) || 500;
+    const tmF = calcTmFromSeq(fwd, na);
+    const tmR = calcTmFromSeq(rev, na);
+    const taOwczarzy = 0.3 * Math.min(tmF, tmR) + 0.7 * Math.max(tmF, tmR) - 14.9;
+    const taConv = (tmF + tmR) / 2 - 5;
+    // Amplicon GC adjustment: longer amplicons may need slightly lower Ta
+    const lenPenalty = ins > 1000 ? -2 : ins > 3000 ? -4 : 0;
+    const taFinal = taOwczarzy + lenPenalty;
+    setTaResult({ tmF: tmF.toFixed(1), tmR: tmR.toFixed(1), taOwczarzy: taOwczarzy.toFixed(1), taConv: taConv.toFixed(1), taFinal: taFinal.toFixed(1), ins });
+  };
+
+  // ===== Molarity Calculator Logic =====
+  const calcMolarity = () => {
+    const mw = parseFloat(molMW);
+    if (isNaN(mw) || mw <= 0) { setMolResult({ error: "Enter a valid molecular weight." }); return; }
+    if (molSolveFor === "conc") {
+      const mass = parseFloat(molMass); const vol = parseFloat(molVol);
+      if (isNaN(mass) || isNaN(vol) || vol <= 0) { setMolResult({ error: "Enter mass (mg) and volume (mL)." }); return; }
+      const moles = mass / 1000 / mw; // mass in g / MW
+      const volL = vol / 1000;
+      const M = moles / volL;
+      setMolResult({ value: M, unit: "M", mM: M*1000, uM: M*1e6, nM: M*1e9, label: "Concentration" });
+    } else if (molSolveFor === "mass") {
+      const conc = parseFloat(molConc); const vol = parseFloat(molVol);
+      if (isNaN(conc) || isNaN(vol) || vol <= 0) { setMolResult({ error: "Enter concentration (mM) and volume (mL)." }); return; }
+      const M = conc / 1000;
+      const mass_g = M * (vol / 1000) * mw;
+      setMolResult({ value: mass_g * 1000, unit: "mg", ug: mass_g * 1e6, ng: mass_g * 1e9, label: "Mass" });
+    } else {
+      const conc = parseFloat(molConc); const mass = parseFloat(molMass);
+      if (isNaN(conc) || isNaN(mass)) { setMolResult({ error: "Enter mass (mg) and concentration (mM)." }); return; }
+      const M = conc / 1000;
+      const moles = mass / 1000 / mw;
+      const volL = moles / M;
+      setMolResult({ value: volL * 1000, unit: "mL", uL: volL * 1e6, label: "Volume" });
+    }
+  };
+
+  // ===== Centrifugation Logic =====
+  const calcCentrifugation = () => {
+    const r = parseFloat(centRadius);
+    if (isNaN(r) || r <= 0) { setCentResult({ error: "Enter a valid rotor radius (mm)." }); return; }
+    if (centSolveFor === "rcf") {
+      const rpm = parseFloat(centRpm);
+      if (isNaN(rpm)) { setCentResult({ error: "Enter RPM." }); return; }
+      const rcf = 1.118e-5 * r * rpm * rpm;
+      setCentResult({ main: Math.round(rcf), unit: "× g (RCF)", rpm, r });
+    } else {
+      const rcf = parseFloat(centRcf);
+      if (isNaN(rcf)) { setCentResult({ error: "Enter RCF (× g)." }); return; }
+      const rpm = Math.sqrt(rcf / (1.118e-5 * r));
+      setCentResult({ main: Math.round(rpm), unit: "RPM", rcf, r });
+    }
+  };
+
+  // ===== Serial Dilution Logic =====
+  const calcSerialDilution = () => {
+    const start = parseFloat(sdStart);
+    const factor = parseFloat(sdFactor);
+    const steps = parseInt(sdSteps);
+    const vol = parseFloat(sdVolume);
+    if (isNaN(start) || isNaN(factor) || isNaN(steps) || factor <= 1) return;
+    const rows: any[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const conc = start / Math.pow(factor, i);
+      const dilution = Math.pow(factor, i);
+      const stockVol = i === 0 ? vol : vol / factor;
+      const diluent = vol - stockVol;
+      rows.push({ step: i, conc, dilution, stockVol: stockVol.toFixed(3), diluent: diluent.toFixed(3) });
+    }
+    setSdResult(rows);
+  };
+
+  // ===== Coding Capacity Logic =====
+  // Average residue MW = 110 Da (after peptide bond dehydration, SantaLucia / Promega convention)
+  // ORF in bp = (AA × 3) + 3  (coding codons + 1 stop codon)
+  // kDa = AA × 110 / 1000
+  const AVG_AA_MW = 110; // Da per residue
+  const calcCodingCapacity = () => {
+    const val = parseFloat(ccInput);
+    if (isNaN(val) || val <= 0) { setCcResult({ error: "Enter a positive value." }); return; }
+    let bp: number, aa: number, kda: number;
+    if (ccMode === "bp") {
+      bp = Math.round(val);
+      aa = Math.max(1, Math.floor((bp - 3) / 3)); // subtract stop codon
+      kda = aa * AVG_AA_MW / 1000;
+    } else if (ccMode === "aa") {
+      aa = Math.round(val);
+      bp = aa * 3 + 3; // coding region + stop codon
+      kda = aa * AVG_AA_MW / 1000;
+    } else {
+      kda = val;
+      aa = Math.round(kda * 1000 / AVG_AA_MW);
+      bp = aa * 3 + 3;
+    }
+    setCcResult({ bp, aa, kda });
+  };
+
+  // ===== Buffer Calculator Logic =====
+  const calcBuffer = () => {
+    const pka = parseFloat(buffPka);
+    const ph = parseFloat(buffPh);
+    const total = parseFloat(buffTotal);
+    if (isNaN(pka) || isNaN(ph) || isNaN(total)) return;
+
+    // ratio = [Base]/[Acid] = 10^(pH - pKa)
+    const ratio = Math.pow(10, ph - pka);
+    // [Acid] + [Base] = Total
+    // [Acid] + ratio * [Acid] = Total => [Acid] = Total / (1 + ratio)
+    const acid = total / (1 + ratio);
+    const base = total - acid;
+
+    setBuffResult({
+      ratio: ratio.toFixed(4),
+      acid: acid.toFixed(2),
+      base: base.toFixed(2),
+      unit: buffTotalUnit,
+      ph: ph.toFixed(2),
+      pka: pka.toFixed(2)
+    });
+  };
+
+  // ===== OD600 Logic =====
+  const FACTORS: Record<string, number> = {
+    "E. coli": 8e8,
+    "S. cerevisiae (Yeast)": 3e7,
+    "B. subtilis": 1.2e8,
+    "Mammalian Cells (SF)": 1e6
+  };
+  const calcOD600 = () => {
+    const od = parseFloat(odVal);
+    if (isNaN(od)) return;
+    const factor = FACTORS[odMolecule] || 8e8;
+    const density = od * factor;
+    setOdResult({
+      density,
+      organism: odMolecule,
+      od: od.toFixed(3)
+    });
+  };
+
+  // ===== Reverse Translation Logic =====
+  const MAMMALIAN_CODON_TABLES: Record<string, Record<string, string>> = {
+    "Human": { 
+      'A': 'GCC', 'C': 'TGC', 'D': 'GAC', 'E': 'GAG', 'F': 'TTC', 'G': 'GGC', 'H': 'CAC', 'I': 'ATC', 
+      'K': 'AAG', 'L': 'CTG', 'M': 'ATG', 'N': 'AAC', 'P': 'CCC', 'Q': 'CAG', 'R': 'AGG', 'S': 'AGC', 
+      'T': 'ACC', 'V': 'GTG', 'W': 'TGG', 'Y': 'TAC', '*': 'TGA' 
+    },
+    "Mouse": { 
+      'A': 'GCC', 'C': 'TGC', 'D': 'GAC', 'E': 'GAG', 'F': 'TTC', 'G': 'GGC', 'H': 'CAC', 'I': 'ATC', 
+      'K': 'AAG', 'L': 'CTG', 'M': 'ATG', 'N': 'AAC', 'P': 'CCC', 'Q': 'CAG', 'R': 'AGG', 'S': 'AGC', 
+      'T': 'ACC', 'V': 'GTG', 'W': 'TGG', 'Y': 'TAC', '*': 'TGA' 
+    },
+    "Rat": { 
+      'A': 'GCC', 'C': 'TGC', 'D': 'GAC', 'E': 'GAG', 'F': 'TTC', 'G': 'GGC', 'H': 'CAC', 'I': 'ATC', 
+      'K': 'AAG', 'L': 'CTG', 'M': 'ATG', 'N': 'AAC', 'P': 'CCC', 'Q': 'CAG', 'R': 'AGG', 'S': 'AGC', 
+      'T': 'ACC', 'V': 'GTG', 'W': 'TGG', 'Y': 'TAC', '*': 'TGA' 
+    },
+    "Monkey": { 
+      'A': 'GCC', 'C': 'TGC', 'D': 'GAC', 'E': 'GAG', 'F': 'TTC', 'G': 'GGC', 'H': 'CAC', 'I': 'ATC', 
+      'K': 'AAG', 'L': 'CTG', 'M': 'ATG', 'N': 'AAC', 'P': 'CCC', 'Q': 'CAG', 'R': 'AGG', 'S': 'AGC', 
+      'T': 'ACC', 'V': 'GTG', 'W': 'TGG', 'Y': 'TAC', '*': 'TGA' 
+    }
+  };
+  const MAMMALIAN_IUPAC_TABLE: Record<string, string> = {
+    'A': 'GCN', 'C': 'TGY', 'D': 'GAY', 'E': 'GAR', 'F': 'TTY', 'G': 'GGN', 'H': 'CAY', 'I': 'ATH', 
+    'K': 'AAR', 'L': 'YTN', 'M': 'ATG', 'N': 'AAY', 'P': 'CCN', 'Q': 'CAR', 'R': 'MGN', 'S': 'WSN', 
+    'T': 'ACN', 'V': 'GTN', 'W': 'TGG', 'Y': 'TAY', '*': 'TRR'
+  };
+
+  const calcRevTrans = () => {
+    const rawProt = rtProtein.replace(/[^A-Za-z*]/g, "").toUpperCase();
+    if (!rawProt) return;
+    
+    let dna = "";
+    if (rtMode === "consensus") {
+      for (let char of rawProt) {
+        dna += MAMMALIAN_IUPAC_TABLE[char] || "NNN";
+      }
+    } else {
+      const table = MAMMALIAN_CODON_TABLES[rtSpecies] || MAMMALIAN_CODON_TABLES["Human"];
+      for (let char of rawProt) {
+        dna += table[char] || "NNN";
+      }
+    }
+
+    setRtResult({
+      dna,
+      length: dna.length,
+      protLength: rawProt.length,
+      gc: (((dna.match(/[GC]/g) || []).length / dna.length) * 100).toFixed(1),
+      mode: rtMode
+    });
+  };
+
+  // ===== Restriction Digest Logic =====
+  const ALL_ENZYMES = [
+    { name: "EcoRI", site: "GAATTC", cut: 1 },
+    { name: "BamHI", site: "GGATCC", cut: 1 },
+    { name: "HindIII", site: "AAGCTT", cut: 1 },
+    { name: "NotI", site: "GCGGCCGC", cut: 2 },
+    { name: "XhoI", site: "CTCGAG", cut: 1 },
+    { name: "NdeI", site: "CATATG", cut: 2 },
+    { name: "BglII", site: "AGATCT", cut: 1 },
+    { name: "SalI", site: "GTCGAC", cut: 1 },
+    { name: "PstI", site: "CTGCAG", cut: 5 },
+    { name: "SmaI", site: "CCCGGG", cut: 3 },
+    { name: "XbaI", site: "TCTAGA", cut: 1 },
+    { name: "NcoI", site: "CCATGG", cut: 1 },
+    { name: "SacI", site: "GAGCTC", cut: 5 },
+    { name: "KpnI", site: "GGTACC", cut: 5 },
+    { name: "ClaI", site: "ATCGAT", cut: 2 },
+    { name: "EcoRV", site: "GATATC", cut: 3 },
+    { name: "SpeI", site: "ACTAGT", cut: 1 },
+    { name: "SphI", site: "GCATGC", cut: 5 },
+    { name: "NheI", site: "GCTAGC", cut: 1 },
+    { name: "MfeI", site: "CAATTG", cut: 1 }
+  ];
+
+  const calcRestrictionDigest = () => {
+    const cleanSeq = rdSeq.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
+    if (!cleanSeq) return;
+
+    const sites: { pos: number; name: string }[] = [];
+    rdSelected.forEach(enzName => {
+      const enz = ALL_ENZYMES.find(e => e.name === enzName);
+      if (!enz) return;
+      
+      let pos = cleanSeq.indexOf(enz.site);
+      while (pos !== -1) {
+        sites.push({ pos: pos + enz.cut, name: enzName });
+        pos = cleanSeq.indexOf(enz.site, pos + 1);
+      }
+    });
+
+    sites.sort((a,b) => a.pos - b.pos);
+
+    let frags: { size: number; seq: string }[] = [];
+    if (sites.length === 0) {
+      frags = [{ size: cleanSeq.length, seq: cleanSeq }];
+    } else {
+      if (rdIsCircular) {
+        // Circular: first cut to last cut, then wrap around
+        for (let i = 0; i < sites.length - 1; i++) {
+          const s = cleanSeq.substring(sites[i].pos, sites[i+1].pos);
+          frags.push({ size: s.length, seq: s });
+        }
+        const wrap = cleanSeq.substring(sites[sites.length-1].pos) + cleanSeq.substring(0, sites[0].pos);
+        frags.push({ size: wrap.length, seq: wrap });
+      } else {
+        // Linear: start to first cut, intermediate cuts, last cut to end
+        const fst = cleanSeq.substring(0, sites[0].pos);
+        frags.push({ size: fst.length, seq: fst });
+        for (let i = 0; i < sites.length - 1; i++) {
+          const s = cleanSeq.substring(sites[i].pos, sites[i+1].pos);
+          frags.push({ size: s.length, seq: s });
+        }
+        const lst = cleanSeq.substring(sites[sites.length-1].pos);
+        frags.push({ size: lst.length, seq: lst });
+      }
+    }
+
+    setRdResult({
+      fragments: frags.filter(f => f.size > 0).sort((a,b) => b.size - a.size),
+      sites: sites,
+      seqLen: cleanSeq.length
+    });
+    setRdHighlighted(null);
+  };
+
+  const downloadGelImage = () => {
+    const svg = document.getElementById("gel-simulator-svg");
+    if (!svg) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    
+    // Scale up for better quality
+    canvas.width = 1200;
+    canvas.height = 800;
+    
+    const svgUrl = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    img.onload = () => {
+      if (ctx) {
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, 1200, 800);
+        const pngUrl = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.href = pngUrl;
+        downloadLink.download = `gel_digest_${Date.now()}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+    };
+    img.src = svgUrl;
+  };
+
+  // ===== PCR Simulator Logic =====
+  const calcPcrSimulator = () => {
+    const template = pcrTemplate.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
+    const fwd = pcrFwd.replace(/[\s0-9]/g, "").toUpperCase();
+    const rev = pcrRev.replace(/[\s0-9]/g, "").toUpperCase();
+    
+    if (!template || !fwd || !rev) return;
+
+    const complementDNA = (dna: string) => {
+      const map: any = { 'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G' };
+      return dna.split('').map(c => map[c] || c).join('');
+    };
+    const reverseComplement = (dna: string) => complementDNA(dna).split('').reverse().join('');
+
+    // Calculate Tm (Simple rule of thumb for demonstration)
+    const getTm = (seq: string) => {
+      const g = (seq.match(/G/g) || []).length;
+      const c = (seq.match(/C/g) || []).length;
+      const a = (seq.match(/A/g) || []).length;
+      const t = (seq.match(/T/g) || []).length;
+      return 2 * (a + t) + 4 * (g + c);
+    };
+
+    // Find annealing parts (minimum 15bp perfect 3' match)
+    const findSites = (primer: string, target: string) => {
+      const sites: number[] = [];
+      for (let len = primer.length; len >= 15; len--) {
+        const annealingPart = primer.substring(primer.length - len);
+        let pos = target.indexOf(annealingPart);
+        while (pos !== -1) {
+          sites.push(pos);
+          pos = target.indexOf(annealingPart, pos + 1);
+        }
+        if (sites.length > 0) break;
+      }
+      return sites;
+    };
+
+    const fwdSites = findSites(fwd, template);
+    const revSites = findSites(reverseComplement(rev), template);
+
+    const products: any[] = [];
+    fwdSites.forEach(fPos => {
+      revSites.forEach(rPos => {
+        if (rPos > fPos) {
+          const matchingRev = reverseComplement(template.substring(rPos, rPos + 15)); // approximation
+          const productMid = template.substring(fPos, rPos + (template.length - findSites(reverseComplement(rev), template)[0] === rPos ? rev.length : 20)); // crude
+          
+          // Better logic: the product starts with the full FWD primer and ends with the full RC of the REV primer
+          // The template part is [fPos ... rPos + RC_Rev_annealing_len]
+          
+          // Let's refine the annealing bit
+          let fAnnealLen = 0;
+          for (let l = fwd.length; l >= 15; l--) {
+            if (template.substring(fPos, fPos + l) === fwd.substring(fwd.length - l)) { fAnnealLen = l; break; }
+          }
+          let rAnnealLen = 0;
+          const revRC = reverseComplement(rev);
+          for (let l = rev.length; l >= 15; l--) {
+            if (template.substring(rPos, rPos + l) === revRC.substring(revRC.length - l)) { rAnnealLen = l; break; }
+          }
+
+          const amplicon = fwd.substring(0, fwd.length - fAnnealLen) + template.substring(fPos, rPos + rAnnealLen) + rev;
+          products.push({
+            sequence: amplicon,
+            size: amplicon.length,
+            fPos: fPos + 1,
+            rPos: rPos + rAnnealLen
+          });
+        }
+      });
+    });
+
+    // Protocol generation
+    const meanTm = (getTm(fwd.slice(-20)) + getTm(rev.slice(-20))) / 2;
+    let extensionTime = Math.ceil(products[0]?.size / 1000 * (pcrKit.includes("Taq") ? 60 : 30));
+    if (extensionTime < 15) extensionTime = 15;
+
+    const program = [
+      { step: "Initial Denaturation", temp: pcrKit.includes("Taq") ? 94 : 98, time: "2 min" },
+      { step: "Denaturation", temp: pcrKit.includes("Taq") ? 94 : 98, time: "15 sec", cycle: true },
+      { step: "Annealing", temp: Math.round(pcrKit.includes("Taq") ? meanTm - 5 : meanTm + 3), time: "20 sec", cycle: true },
+      { step: "Extension", temp: 72, time: `${extensionTime} sec`, cycle: true },
+      { step: "Final Extension", temp: 72, time: "5 min" },
+      { step: "Hold", temp: 4, time: "∞" }
+    ];
+
+    setPcrResult({
+      products: products.sort((a,b) => b.size - a.size),
+      program,
+      tm: meanTm.toFixed(1),
+      kit: pcrKit
+    });
+  };
+
+  // ===== Unit Converter Biology Logic =====
+  const calcUnitConverter = () => {
+    const val = parseFloat(ucValue);
+    const mw = parseFloat(ucMW);
+    if (isNaN(val) || val <= 0) { setUcResult({ error: "Enter a valid value." }); return; }
+    const needsMW = ["µg", "ng", "mg"].includes(ucFromUnit);
+    if (needsMW && (isNaN(mw) || mw <= 0)) { setUcResult({ error: "Enter a valid molecular weight." }); return; }
+    let results: any = {};
+    if (ucFromUnit === "pmol") {
+      const mol = val * 1e-12;
+      results = { pmol: val, nmol: val/1e3, µmol: val/1e6, mmol: val/1e9 };
+      if (!isNaN(mw) && mw > 0) { results.ng = mol * mw * 1e12; results.µg = mol * mw * 1e9; results.mg = mol * mw * 1e6; }
+    } else if (ucFromUnit === "nmol") {
+      results = { pmol: val*1e3, nmol: val, µmol: val/1e3, mmol: val/1e6 };
+      if (!isNaN(mw) && mw > 0) { const mol = val*1e-9; results.ng = mol*mw*1e12; results.µg = mol*mw*1e9; results.mg = mol*mw*1e6; }
+    } else if (ucFromUnit === "ng") {
+      const g = val * 1e-9; const mol = g / mw;
+      results = { ng: val, µg: val/1e3, mg: val/1e6, g: val/1e9, nmol: mol*1e9, pmol: mol*1e12 };
+    } else if (ucFromUnit === "µg") {
+      const g = val * 1e-6; const mol = g / mw;
+      results = { ng: val*1e3, µg: val, mg: val/1e3, g: val/1e6, nmol: mol*1e9, pmol: mol*1e12 };
+    } else if (ucFromUnit === "mg") {
+      const g = val * 1e-3; const mol = g / mw;
+      results = { ng: val*1e6, µg: val*1e3, mg: val, g: val/1e3, nmol: mol*1e9, pmol: mol*1e12 };
+    }
+    setUcResult({ results, fromVal: val, fromUnit: ucFromUnit });
+  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(output);
@@ -905,6 +1475,818 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
                   </div>
                 </div>
               </div>
+            ) : toolId === "tm-calculator" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Oligonucleotide Sequence (5' → 3')</label>
+                    <input id="tm-seq" type="text" value={tmSeq} onChange={e => setTmSeq(e.target.value)} style={{...calcInputStyle, fontFamily: "monospace", fontSize: "1.05rem", letterSpacing: "0.05em"}} placeholder="e.g. ATGCGTCAAGCTAGC" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>[Na⁺] (mM)</label>
+                    <input id="tm-na" type="number" value={tmNa} onChange={e => setTmNa(e.target.value)} style={calcInputStyle} placeholder="50" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Oligo Concentration (nM)</label>
+                    <input id="tm-conc" type="number" value={tmConc} onChange={e => setTmConc(e.target.value)} style={calcInputStyle} placeholder="250" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Nucleic Acid Type</label>
+                    <select id="tm-type" value={tmDNA} onChange={e => setTmDNA(e.target.value)} style={calcInputStyle}>
+                      <option value="dna">DNA</option>
+                      <option value="rna">RNA</option>
+                    </select>
+                  </div>
+                </div>
+                <button id="tm-run" onClick={calcTm} style={{ background: accentColor, color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: `0 4px 20px ${accentColor}40` }}>
+                  <Play size={18} fill="black" /> Calculate Tm
+                </button>
+                {tmResult && !tmResult.error && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
+                    {[{label: "Tm (NN + Salt Corrected)", value: `${tmResult.tmFinal} °C`, accent: true},
+                      {label: "Basic Tm (2AT + 4GC)", value: `${tmResult.tmBasic} °C`},
+                      {label: "Length", value: `${tmResult.len} nt`},
+                      {label: "GC Content", value: `${tmResult.gcPct}%`},
+                      {label: "ΔH", value: `${tmResult.dH} kcal/mol`},
+                      {label: "ΔS", value: `${tmResult.dS} cal/mol·K`},
+                    ].map(c => (
+                      <div key={c.label} style={{ background: c.accent ? `${accentColor}12` : "rgba(255,255,255,0.03)", border: `1px solid ${c.accent ? accentColor+'40' : "rgba(255,255,255,0.06)"}`, borderRadius: "14px", padding: "1.25rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.4rem" }}>{c.label}</div>
+                        <div style={{ fontSize: c.accent ? "2rem" : "1.4rem", fontWeight: 800, color: c.accent ? accentColor : "#f1f5f9" }}>{c.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {tmResult?.error && <div style={{ color: "#f43f5e", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", borderRadius: "12px", padding: "1rem" }}>{tmResult.error}</div>}
+              </div>
+            ) : toolId === "ta-calculator" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Forward Primer (5' → 3')</label>
+                    <input id="ta-fwd" type="text" value={taFwd} onChange={e => setTaFwd(e.target.value)} style={{...calcInputStyle, fontFamily: "monospace"}} placeholder="e.g. ATGGCATCAAGCTGCTA" />
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Reverse Primer (5' → 3')</label>
+                    <input id="ta-rev" type="text" value={taRev} onChange={e => setTaRev(e.target.value)} style={{...calcInputStyle, fontFamily: "monospace"}} placeholder="e.g. TCAGCTTGATGCCATCGA" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Insert Size (bp)</label>
+                    <input id="ta-insert" type="number" value={taInsert} onChange={e => setTaInsert(e.target.value)} style={calcInputStyle} placeholder="500" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>[Na⁺] (mM)</label>
+                    <input id="ta-na" type="number" value={taNa} onChange={e => setTaNa(e.target.value)} style={calcInputStyle} placeholder="50" />
+                  </div>
+                </div>
+                <button id="ta-run" onClick={calcTa} style={{ background: "#10b981", color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(16,185,129,0.35)" }}>
+                  <Play size={18} fill="black" /> Calculate Ta
+                </button>
+                {taResult && !taResult.error && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
+                      {[{label: "Tm Forward", value: `${taResult.tmF} °C`, color: "#38bdf8"},
+                        {label: "Tm Reverse", value: `${taResult.tmR} °C`, color: "#818cf8"},
+                        {label: "Ta (Owczarzy)", value: `${taResult.taOwczarzy} °C`, color: "#10b981", accent: true},
+                        {label: "Ta (Conventional −5)", value: `${taResult.taConv} °C`, color: "#f59e0b"},
+                      ].map(c => (
+                        <div key={c.label} style={{ background: c.accent ? `rgba(16,185,129,0.08)` : "rgba(255,255,255,0.03)", border: `1px solid ${c.accent ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: "14px", padding: "1.25rem" }}>
+                          <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.4rem" }}>{c.label}</div>
+                          <div style={{ fontSize: c.accent ? "2rem" : "1.4rem", fontWeight: 800, color: c.color }}>{c.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: "14px", padding: "1rem 1.25rem", color: "#94a3b8", fontSize: "0.85rem", lineHeight: 1.6 }}>
+                      <strong style={{ color: "#e2e8f0" }}>Recommended Ta: {taResult.taFinal} °C</strong> (Owczarzy formula, insert {taResult.ins} bp). 
+                      Start with this temperature and optimize by ±2 °C gradient.
+                    </div>
+                  </div>
+                )}
+                {taResult?.error && <div style={{ color: "#f43f5e", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", borderRadius: "12px", padding: "1rem" }}>{taResult.error}</div>}
+              </div>
+            ) : toolId === "molarity-calculator" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                  {(["conc", "mass", "vol"] as const).map(opt => (
+                    <button id={`mol-solve-${opt}`} key={opt} onClick={() => setMolSolveFor(opt)} style={{ padding: "0.6rem 1.25rem", borderRadius: "10px", border: `1px solid ${molSolveFor === opt ? accentColor : "rgba(148,163,184,0.15)"}`, background: molSolveFor === opt ? `${accentColor}18` : "transparent", color: molSolveFor === opt ? accentColor : "#94a3b8", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem", transition: "all 0.2s" }}>
+                      Solve for {opt === "conc" ? "Concentration" : opt === "mass" ? "Mass" : "Volume"}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Molecular Weight (g/mol)</label>
+                    <input id="mol-mw" type="number" value={molMW} onChange={e => setMolMW(e.target.value)} style={calcInputStyle} placeholder="e.g. 342.30" />
+                  </div>
+                  {molSolveFor !== "mass" && (
+                    <div>
+                      <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Mass (mg)</label>
+                      <input id="mol-mass" type="number" value={molMass} onChange={e => setMolMass(e.target.value)} style={calcInputStyle} placeholder="e.g. 10" />
+                    </div>
+                  )}
+                  {molSolveFor !== "vol" && (
+                    <div>
+                      <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Volume (mL)</label>
+                      <input id="mol-vol" type="number" value={molVol} onChange={e => setMolVol(e.target.value)} style={calcInputStyle} placeholder="e.g. 10" />
+                    </div>
+                  )}
+                  {molSolveFor !== "conc" && (
+                    <div>
+                      <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Concentration (mM)</label>
+                      <input id="mol-conc" type="number" value={molConc} onChange={e => setMolConc(e.target.value)} style={calcInputStyle} placeholder="e.g. 1" />
+                    </div>
+                  )}
+                </div>
+                <button id="mol-run" onClick={calcMolarity} style={{ background: "#f59e0b", color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}>
+                  <Play size={18} fill="black" /> Calculate
+                </button>
+                {molResult && !molResult.error && (() => {
+                  const cards = molSolveFor === "conc"
+                    ? [
+                        {label: "Molarity", value: `${(molResult.value).toExponential(3)} M`, accent: true},
+                        {label: "mM", value: molResult.mM.toPrecision(4)},
+                        {label: "µM", value: molResult.uM.toPrecision(4)},
+                        {label: "nM", value: molResult.nM.toPrecision(4)},
+                      ]
+                    : molSolveFor === "mass"
+                    ? [
+                        {label: "Mass (mg)", value: `${molResult.value.toPrecision(4)} mg`, accent: true},
+                        {label: "µg", value: molResult.ug.toPrecision(4)},
+                        {label: "ng", value: molResult.ng.toPrecision(4)},
+                      ]
+                    : [
+                        {label: "Volume (mL)", value: `${molResult.value.toPrecision(4)} mL`, accent: true},
+                        {label: "µL", value: molResult.uL.toPrecision(4)},
+                      ];
+                  return (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
+                      {cards.map(c => (
+                        <div key={c.label} style={{ background: c.accent ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${c.accent ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: "14px", padding: "1.25rem" }}>
+                          <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.4rem" }}>{c.label}</div>
+                          <div style={{ fontSize: c.accent ? "1.6rem" : "1.3rem", fontWeight: 800, color: c.accent ? "#f59e0b" : "#f1f5f9" }}>{c.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+                {molResult?.error && <div style={{ color: "#f43f5e", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", borderRadius: "12px", padding: "1rem" }}>{molResult.error}</div>}
+              </div>
+            ) : toolId === "centrifugation-calculator" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                  {(["rcf", "rpm"] as const).map(opt => (
+                    <button id={`cent-solve-${opt}`} key={opt} onClick={() => setCentSolveFor(opt)} style={{ padding: "0.6rem 1.25rem", borderRadius: "10px", border: `1px solid ${centSolveFor === opt ? "#a78bfa" : "rgba(148,163,184,0.15)"}`, background: centSolveFor === opt ? "rgba(167,139,250,0.12)" : "transparent", color: centSolveFor === opt ? "#a78bfa" : "#94a3b8", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem", transition: "all 0.2s" }}>
+                      Solve for {opt === "rcf" ? "RCF (×g)" : "RPM"}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Rotor Radius (mm)</label>
+                    <input id="cent-radius" type="number" value={centRadius} onChange={e => setCentRadius(e.target.value)} style={calcInputStyle} placeholder="e.g. 90" />
+                  </div>
+                  {centSolveFor === "rcf" ? (
+                    <div>
+                      <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Speed (RPM)</label>
+                      <input id="cent-rpm" type="number" value={centRpm} onChange={e => setCentRpm(e.target.value)} style={calcInputStyle} placeholder="e.g. 13000" />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Force (× g)</label>
+                      <input id="cent-rcf" type="number" value={centRcf} onChange={e => setCentRcf(e.target.value)} style={calcInputStyle} placeholder="e.g. 16000" />
+                    </div>
+                  )}
+                </div>
+                <button id="cent-run" onClick={calcCentrifugation} style={{ background: "#a78bfa", color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(167,139,250,0.35)" }}>
+                  <Play size={18} fill="black" /> Calculate
+                </button>
+                {centResult && !centResult.error && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
+                      <div style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: "14px", padding: "1.5rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.4rem" }}>{centResult.unit}</div>
+                        <div style={{ fontSize: "2.5rem", fontWeight: 800, color: "#a78bfa" }}>{centResult.main.toLocaleString()}</div>
+                      </div>
+                      <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "1.5rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "0.4rem" }}>Rotor Radius</div>
+                        <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "#f1f5f9" }}>{centResult.r} mm</div>
+                      </div>
+                    </div>
+                    <div style={{ background: "rgba(167,139,250,0.04)", border: "1px solid rgba(167,139,250,0.12)", borderRadius: "14px", padding: "1rem" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, marginBottom: "0.75rem", textTransform: "uppercase" }}>Common Protocol Reference</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.5rem" }}>
+                        {[{n:"Cell pellet",rcf:"300×g",rpm:Math.round(Math.sqrt(300/(1.118e-5*parseFloat(centRadius||"90"))))},{n:"Bacteria",rcf:"3,000×g",rpm:Math.round(Math.sqrt(3000/(1.118e-5*parseFloat(centRadius||"90"))))},{n:"Protein precipitation",rcf:"10,000×g",rpm:Math.round(Math.sqrt(10000/(1.118e-5*parseFloat(centRadius||"90"))))},{n:"Microcentrifuge max",rcf:"16,000×g",rpm:Math.round(Math.sqrt(16000/(1.118e-5*parseFloat(centRadius||"90"))))}].map(p => (
+                          <div key={p.n} style={{ display: "flex", justifyContent: "space-between", padding: "0.4rem 0.75rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px" }}>
+                            <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>{p.n}</span>
+                            <span style={{ color: "#a78bfa", fontWeight: 700, fontSize: "0.8rem" }}>{p.rcf} / {p.rpm.toLocaleString()} RPM</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {centResult?.error && <div style={{ color: "#f43f5e", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", borderRadius: "12px", padding: "1rem" }}>{centResult.error}</div>}
+              </div>
+            ) : toolId === "serial-dilution-planner" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Starting Concentration</label>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <input id="sd-start" type="number" value={sdStart} onChange={e => setSdStart(e.target.value)} style={{...calcInputStyle, flex: 1}} placeholder="1" />
+                      <select id="sd-unit" value={sdStartUnit} onChange={e => setSdStartUnit(e.target.value)} style={{...calcInputStyle, width: "80px"}}>
+                        {["M","mM","µM","nM","pM","µg/mL","ng/mL","mg/mL"].map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Dilution Factor</label>
+                    <input id="sd-factor" type="number" value={sdFactor} onChange={e => setSdFactor(e.target.value)} style={calcInputStyle} placeholder="10" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Number of Steps</label>
+                    <input id="sd-steps" type="number" value={sdSteps} onChange={e => setSdSteps(e.target.value)} style={calcInputStyle} placeholder="8" min="1" max="20" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Final Volume per Step (mL)</label>
+                    <input id="sd-vol" type="number" value={sdVolume} onChange={e => setSdVolume(e.target.value)} style={calcInputStyle} placeholder="1" />
+                  </div>
+                </div>
+                <button id="sd-run" onClick={calcSerialDilution} style={{ background: "#06b6d4", color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(6,182,212,0.35)" }}>
+                  <Play size={18} fill="black" /> Generate Dilution Table
+                </button>
+                {sdResult.length > 0 && (
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "monospace", fontSize: "0.9rem" }}>
+                      <thead>
+                        <tr>
+                          {["Step","Dilution","Concentration","Take from prev. (mL)","Add diluent (mL)"].map(h => (
+                            <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.15)", color: "#06b6d4", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sdResult.map((row, i) => (
+                          <tr key={i} style={{ background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent" }}>
+                            <td style={{ padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.04)", color: "#94a3b8" }}>{row.step === 0 ? "Stock" : row.step}</td>
+                            <td style={{ padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.04)", color: "#e2e8f0" }}>1 : {row.dilution.toLocaleString()}</td>
+                            <td style={{ padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.04)", color: "#06b6d4", fontWeight: 700 }}>{row.conc >= 1 ? row.conc.toPrecision(4) : row.conc.toExponential(3)} {sdStartUnit}</td>
+                            <td style={{ padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.04)", color: i === 0 ? "#475569" : "#e2e8f0" }}>{i === 0 ? "—" : row.stockVol}</td>
+                            <td style={{ padding: "0.65rem 1rem", border: "1px solid rgba(255,255,255,0.04)", color: i === 0 ? "#475569" : "#e2e8f0" }}>{i === 0 ? "—" : row.diluent}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ) : toolId === "unit-converter-biology" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Value</label>
+                    <input id="uc-value" type="number" value={ucValue} onChange={e => setUcValue(e.target.value)} style={calcInputStyle} placeholder="e.g. 1" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>From Unit</label>
+                    <select id="uc-from" value={ucFromUnit} onChange={e => setUcFromUnit(e.target.value)} style={calcInputStyle}>
+                      <option value="pmol">pmol</option>
+                      <option value="nmol">nmol</option>
+                      <option value="ng">ng</option>
+                      <option value="µg">µg</option>
+                      <option value="mg">mg</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Molecule Type</label>
+                    <select id="uc-moltype" value={ucMolType} onChange={e => setUcMolType(e.target.value)} style={calcInputStyle}>
+                      <option value="DNA">DNA / Custom</option>
+                      <option value="RNA">RNA</option>
+                      <option value="Protein">Protein</option>
+                    </select>
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Molecular Weight (g/mol or Da)</label>
+                    <input id="uc-mw" type="number" value={ucMW} onChange={e => setUcMW(e.target.value)} style={calcInputStyle} placeholder="e.g. 50000 for a 50 kDa protein, or 330 × bp for dsDNA" />
+                  </div>
+                </div>
+                <button id="uc-run" onClick={calcUnitConverter} style={{ background: "#f472b6", color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(244,114,182,0.35)" }}>
+                  <Play size={18} fill="black" /> Convert Units
+                </button>
+                {ucResult && !ucResult.error && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
+                    {Object.entries(ucResult.results).map(([unit, val]: any, idx) => (
+                      <div key={unit} style={{ background: idx === 0 ? "rgba(244,114,182,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${idx === 0 ? "rgba(244,114,182,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: "14px", padding: "1.25rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.4rem" }}>{unit}</div>
+                        <div style={{ fontSize: idx === 0 ? "1.5rem" : "1.2rem", fontWeight: 800, color: idx === 0 ? "#f472b6" : "#f1f5f9" }}>{typeof val === "number" ? (val >= 0.01 && val < 1e6 ? val.toPrecision(5) : val.toExponential(3)) : val}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {ucResult?.error && <div style={{ color: "#f43f5e", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", borderRadius: "12px", padding: "1rem" }}>{ucResult.error}</div>}
+              </div>
+            ) : toolId === "coding-capacity" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                {/* Mode selector */}
+                <div>
+                  <label style={{ color: "#e2e8f0", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "0.75rem" }}>I know the…</label>
+                  <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                    {(["bp", "aa", "kda"] as const).map(m => (
+                      <button key={m} id={`cc-mode-${m}`} onClick={() => { setCcMode(m); setCcResult(null); setCcInput(""); }}
+                        style={{ padding: "0.6rem 1.4rem", borderRadius: "10px", border: `1px solid ${ccMode === m ? "#38bdf8" : "rgba(148,163,184,0.15)"}`, background: ccMode === m ? "rgba(56,189,248,0.12)" : "transparent", color: ccMode === m ? "#38bdf8" : "#94a3b8", fontWeight: 700, cursor: "pointer", fontSize: "0.9rem", transition: "all 0.2s" }}>
+                        {m === "bp" ? "DNA Length (bp)" : m === "aa" ? "Protein Length (AA)" : "Protein Size (kDa)"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Input */}
+                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
+                      {ccMode === "bp" ? "DNA Coding Sequence Length (bp)" : ccMode === "aa" ? "Protein Length (amino acids)" : "Protein Molecular Weight (kDa)"}
+                    </label>
+                    <input id="cc-input" type="number" value={ccInput} onChange={e => { setCcInput(e.target.value); setCcResult(null); }}
+                      style={{ ...calcInputStyle, fontSize: "1.3rem", fontWeight: 700 }}
+                      placeholder={ccMode === "bp" ? "e.g. 1500" : ccMode === "aa" ? "e.g. 500" : "e.g. 55"} />
+                  </div>
+                  <button id="cc-run" onClick={calcCodingCapacity}
+                    style={{ background: "#38bdf8", color: "black", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(56,189,248,0.35)", flexShrink: 0 }}>
+                    <Play size={18} fill="black" /> Calculate
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {ccResult && !ccResult.error && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+                    >
+                      {/* Visual flow */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem", flexWrap: "wrap", padding: "1rem 0" }}>
+                        {[
+                          { label: "DNA Length",    value: ccResult.bp,          unit: "bp",  color: "#38bdf8", active: ccMode === "bp" },
+                          { label: "Protein Length", value: ccResult.aa,          unit: "AA",  color: "#10b981", active: ccMode === "aa" },
+                          { label: "Protein Size",   value: ccResult.kda.toFixed(1), unit: "kDa", color: "#f59e0b", active: ccMode === "kda" },
+                        ].map((c, i, arr) => (
+                          <React.Fragment key={c.label}>
+                            <div style={{ textAlign: "center", padding: "1.5rem 1.75rem", borderRadius: "18px", background: c.active ? `${c.color}15` : "rgba(255,255,255,0.03)", border: `2px solid ${c.active ? c.color : "rgba(255,255,255,0.07)"}`, minWidth: "160px", transition: "all 0.25s", position: "relative" }}>
+                              <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>{c.label}</div>
+                              <div style={{ fontSize: "2.4rem", fontWeight: 800, color: c.active ? c.color : "#f1f5f9", lineHeight: 1 }}>{c.value.toLocaleString()}</div>
+                              <div style={{ fontSize: "0.9rem", color: c.active ? c.color : "#64748b", fontWeight: 600, marginTop: "0.3rem" }}>{c.unit}</div>
+                              
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${c.value} ${c.unit}`);
+                                  // Could add a 'copied' state here but keep it simple for now
+                                }}
+                                style={{ position: "absolute", top: "8px", right: "8px", background: "transparent", border: "none", color: "#475569", cursor: "pointer", padding: "4px" }}
+                                title="Copy"
+                              >
+                                <Copy size={14} />
+                              </button>
+                            </div>
+                            {i < arr.length - 1 && (
+                              <div style={{ color: "#334155", fontSize: "1.5rem", padding: "0 0.25rem", fontWeight: 300 }}>⇌</div>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </div>
+
+                      {/* Reference info */}
+                      <div style={{ background: "rgba(56,189,248,0.04)", border: "1px solid rgba(56,189,248,0.12)", borderRadius: "14px", padding: "1rem 1.25rem" }}>
+                        <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.6rem" }}>Methodology (based on BioMath standards)</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem" }}>
+                          {[
+                            { formula: "AA = (bp − 3) ÷ 3",       note: "Assumes one stop codon (3 bp)" },
+                            { formula: "bp = (AA × 3) + 3",       note: "Coding region + terminal stop" },
+                            { formula: "kDa = AA × 110 ÷ 1,000",  note: "Avg residue weight = 110 Da" },
+                          ].map(f => (
+                            <div key={f.formula} style={{ padding: "0.6rem 0.8rem", background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                              <code style={{ color: "#38bdf8", fontSize: "0.85rem", fontWeight: 600, fontFamily: "var(--font-mono)" }}>{f.formula}</code>
+                              <div style={{ color: "#475569", fontSize: "0.75rem", marginTop: "0.3rem" }}>{f.note}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {ccResult?.error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ color: "#f43f5e", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", borderRadius: "12px", padding: "1rem" }}>{ccResult.error}</motion.div>}
+              </div>
+            ) : toolId === "buffer-calculator" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Desired pH</label>
+                    <input type="number" step="0.01" value={buffPh} onChange={e => setBuffPh(e.target.value)} style={calcInputStyle} placeholder="e.g. 4.76" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>pKa of Buffer</label>
+                    <input type="number" step="0.01" value={buffPka} onChange={e => setBuffPka(e.target.value)} style={calcInputStyle} placeholder="e.g. 4.76" />
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Total Concentration</label>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <input type="number" value={buffTotal} onChange={e => setBuffTotal(e.target.value)} style={{ ...calcInputStyle, flex: 1 }} placeholder="e.g. 100" />
+                      <select value={buffTotalUnit} onChange={e => setBuffTotalUnit(e.target.value)} style={{ ...calcInputStyle, width: "100px" }}>
+                        <option value="mM">mM</option>
+                        <option value="M">M</option>
+                        <option value="µM">µM</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <button onClick={calcBuffer} style={{ background: "#8b5cf6", color: "white", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(139, 92, 246, 0.3)" }}>
+                  <Play size={18} fill="white" /> Calculate Proportions
+                </button>
+                {buffResult && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
+                    {[
+                      { label: "Salt/Acid Ratio", value: buffResult.ratio, accent: true, color: "#8b5cf6" },
+                      { label: "[Conjugate Base]", value: `${buffResult.base} ${buffResult.unit}`, color: "#f472b6" },
+                      { label: "[Weak Acid]", value: `${buffResult.acid} ${buffResult.unit}`, color: "#38bdf8" }
+                    ].map(c => (
+                      <div key={c.label} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${c.accent ? c.color : "rgba(255,255,255,0.06)"}`, borderRadius: "14px", padding: "1.25rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "0.4rem" }}>{c.label}</div>
+                        <div style={{ fontSize: "1.4rem", fontWeight: 800, color: c.color }}>{c.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : toolId === "od600-cell-density" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>OD600 Value</label>
+                    <input type="number" step="0.001" value={odVal} onChange={e => setOdVal(e.target.value)} style={calcInputStyle} placeholder="1.000" />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Organism</label>
+                    <select value={odMolecule} onChange={e => setOdMolecule(e.target.value)} style={calcInputStyle}>
+                      {Object.keys(FACTORS).map(org => <option key={org} value={org}>{org}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={calcOD600} style={{ background: "#22c55e", color: "white", border: "none", borderRadius: "12px", padding: "1rem 2rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(34, 197, 94, 0.3)" }}>
+                  <Play size={18} fill="white" /> Estimate Density
+                </button>
+                {odResult && (
+                  <div style={{ background: "rgba(34, 197, 94, 0.08)", border: "1px solid rgba(34, 197, 94, 0.2)", borderRadius: "16px", padding: "1.5rem", textAlign: "center" }}>
+                    <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Estimated Density for {odResult.organism}</div>
+                    <div style={{ fontSize: "3rem", fontWeight: 900, color: "#22c55e", lineHeight: 1 }}>{odResult.density.toExponential(2)}</div>
+                    <div style={{ fontSize: "1rem", color: "#94a3b8", marginTop: "0.5rem", fontWeight: 600 }}>cells / mL</div>
+                    <div style={{ marginTop: "1rem", fontSize: "0.85rem", color: "#64748b", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "1rem" }}>
+                      Note: Values depend on spectrophotometer calibration and media.
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : toolId === "rev-trans" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div>
+                  <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Protein Sequence</label>
+                  <textarea 
+                    value={rtProtein} 
+                    onChange={e => setRtProtein(e.target.value)} 
+                    style={{ ...calcInputStyle, minHeight: "120px", fontFamily: "monospace", fontSize: "0.9rem", resize: "vertical" }} 
+                    placeholder="Enter protein sequence (e.g., MKAL...) or Use '*' for Stop"
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Optimization Species</label>
+                    <select value={rtSpecies} onChange={e => setRtSpecies(e.target.value)} style={calcInputStyle} disabled={rtMode === "consensus"}>
+                      {Object.keys(MAMMALIAN_CODON_TABLES).map(s => <option key={s} value={s}>{s} Codon Usage</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Translation Mode</label>
+                    <div style={{ display: "flex", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.25rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      {(["optimized", "consensus"] as const).map(m => (
+                        <button key={m} onClick={() => setRtMode(m)} style={{ flex: 1, padding: "0.5rem", borderRadius: "8px", border: "none", background: rtMode === m ? "#a78bfa" : "transparent", color: rtMode === m ? "white" : "#64748b", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+                          {m === "optimized" ? "Optimized" : "Consensus"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ alignSelf: "flex-end" }}>
+                    <button onClick={calcRevTrans} style={{ width: "100%", background: "#a78bfa", color: "white", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(167, 139, 250, 0.3)" }}>
+                      <Play size={18} fill="white" /> Run
+                    </button>
+                  </div>
+                </div>
+
+                {rtResult && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "16px", padding: "1.25rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Optimized Nucleotide Sequence ({rtResult.length} bp)</div>
+                        <button onClick={() => { navigator.clipboard.writeText(rtResult.dna); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ color: "#a78bfa", background: "transparent", border: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                          {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied" : "Copy DNA"}
+                        </button>
+                      </div>
+                      <div style={{ fontFamily: "monospace", fontSize: "0.95rem", color: "#f1f5f9", letterSpacing: "0.05em", wordBreak: "break-all", background: "rgba(0,0,0,0.2)", padding: "1rem", borderRadius: "10px", maxHeight: "200px", overflowY: "auto", border: "1px solid rgba(255,255,255,0.03)" }}>
+                        {rtResult.dna}
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
+                      {[
+                        { label: "Amino Acids", value: rtResult.protLength },
+                        { label: "GC Content", value: rtResult.gc + "%" },
+                        { label: "Target Org", value: rtSpecies }
+                      ].map(stat => (
+                        <div key={stat.label} style={{ background: "rgba(167, 139, 250, 0.05)", border: "1px solid rgba(167, 139, 250, 0.1)", borderRadius: "12px", padding: "1rem", textAlign: "center" }}>
+                          <div style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "0.25rem" }}>{stat.label}</div>
+                          <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#a78bfa" }}>{stat.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            ) : toolId === "restriction-digest" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div>
+                  <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>DNA Sequence (FASTA or Plain)</label>
+                  <textarea 
+                    value={rdSeq} 
+                    onChange={e => setRdSeq(e.target.value)} 
+                    style={{ ...calcInputStyle, minHeight: "100px", fontFamily: "monospace", fontSize: "0.9rem", resize: "vertical" }} 
+                    placeholder="Enter DNA sequence..."
+                  />
+                </div>
+                
+                <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: "200px" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Select Enzymes</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.75rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", maxHeight: "150px", overflowY: "auto" }}>
+                      {ALL_ENZYMES.map(enz => (
+                        <button 
+                          key={enz.name} 
+                          onClick={() => {
+                            if (rdSelected.includes(enz.name)) setRdSelected(rdSelected.filter(n => n !== enz.name));
+                            else setRdSelected([...rdSelected, enz.name]);
+                          }}
+                          style={{ padding: "0.4rem 0.8rem", borderRadius: "8px", border: "1px solid", borderColor: rdSelected.includes(enz.name) ? "#38bdf8" : "rgba(255,255,255,0.1)", background: rdSelected.includes(enz.name) ? "rgba(56,189,248,0.15)" : "rgba(255,255,255,0.03)", color: rdSelected.includes(enz.name) ? "#38bdf8" : "#94a3b8", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
+                        >
+                          {enz.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: 600 }}>Topology</label>
+                    <div style={{ display: "flex", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.25rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      {(["linear", "circular"] as const).map(t => (
+                        <button key={t} onClick={() => setRdIsCircular(t === "circular")} style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "none", background: (rdIsCircular === (t === "circular")) ? "#38bdf8" : "transparent", color: (rdIsCircular === (t === "circular")) ? "black" : "#64748b", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
+                          {t.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={calcRestrictionDigest} style={{ background: "#38bdf8", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(56,189,248,0.3)" }}>
+                  <Play size={18} fill="black" /> Simulate Digest
+                </button>
+
+                {rdResult && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "start" }}>
+                      <div style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "16px", padding: "1.25rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>Digest Fragments</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "0.75rem" }}>
+                          {rdResult.fragments.map((f: any, i: number) => (
+                            <button 
+                              key={i} 
+                              onClick={() => setRdHighlighted(i)}
+                              style={{ 
+                                padding: "0.75rem", 
+                                background: rdHighlighted === i ? "rgba(56,189,248,0.15)" : "rgba(255,255,255,0.03)", 
+                                border: rdHighlighted === i ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.05)", 
+                                borderRadius: "10px", 
+                                textAlign: "center",
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                            >
+                              <div style={{ fontSize: "1.2rem", fontWeight: 800, color: rdHighlighted === i ? "#38bdf8" : "#94a3b8" }}>{f.size.toLocaleString()}</div>
+                              <div style={{ fontSize: "0.65rem", color: "#475569", fontWeight: 600 }}>BP</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "16px", padding: "1.25rem" }}>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>Site Map</div>
+                        <div style={{ maxHeight: "150px", overflowY: "auto", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                          {rdResult.sites.map((s: any, i: number) => (
+                            <span key={i} style={{ fontSize: "0.8rem", color: "#cbd5e1", background: "rgba(56,189,248,0.1)", padding: "0.2rem 0.6rem", borderRadius: "6px", border: "1px solid rgba(56,189,248,0.2)" }}>
+                              {s.name} @ {s.pos}
+                            </span>
+                          ))}
+                          {rdResult.sites.length === 0 && <div style={{ color: "#475569", fontSize: "0.9rem" }}>No cut sites found for selected enzymes.</div>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {rdHighlighted !== null && rdResult.fragments[rdHighlighted] && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} style={{ background: "rgba(56,189,248,0.03)", border: "1px solid rgba(56,189,248,0.15)", borderRadius: "16px", padding: "1.25rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                          <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Sequence for Fragment #{rdHighlighted + 1} ({rdResult.fragments[rdHighlighted].size} bp)</span>
+                          <button onClick={() => { navigator.clipboard.writeText(rdResult.fragments[rdHighlighted].seq); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ color: "#38bdf8", background: "rgba(56,189,248,0.1)", border: "none", borderRadius: "6px", padding: "0.4rem 0.8rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                            {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied" : "Copy Sequence"}
+                          </button>
+                        </div>
+                        <div style={{ maxWeight: "100%", overflowX: "auto", background: "rgba(0,0,0,0.2)", padding: "1rem", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
+                          <code style={{ fontSize: "0.85rem", color: "#cbd5e1", fontFamily: "monospace", display: "block", whiteSpace: "break-spaces", wordBreak: "break-all" }}>
+                            {rdResult.fragments[rdHighlighted].seq || "Sequence not captured."}
+                          </code>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "24px", padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "1.25rem" }}>
+                        <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
+                          <div>
+                            <div style={{ color: "#64748b", fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>Change Ladder</div>
+                            <select value={rdLadder} onChange={e => setRdLadder(e.target.value)} style={{ ...calcInputStyle, width: "200px", padding: "0.5rem 0.75rem", fontSize: "0.85rem" }}>
+                              {Object.keys(LADDERS).map(l => <option key={l} value={l}>{l}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <div style={{ color: "#64748b", fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.5rem" }}>Highlighted Fragment</div>
+                            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#38bdf8" }}>
+                              {rdHighlighted !== null ? `${rdResult.fragments[rdHighlighted].size} bp` : "--"}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={downloadGelImage} style={{ background: "rgba(56,189,248,0.1)", color: "#38bdf8", border: "1px solid #38bdf8", borderRadius: "10px", padding: "0.75rem 1.25rem", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <FileText size={18} /> Download PNG
+                        </button>
+                      </div>
+
+                      <div style={{ alignSelf: "center", padding: "40px", background: "#020617", borderRadius: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+                        <svg id="gel-simulator-svg" width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+                          {/* Dark background */}
+                          <rect width="600" height="400" fill="#020617" />
+                          
+                          {/* Ladder Area */}
+                          <rect x="80" y="40" width="80" height="320" fill="rgba(255,255,255,0.02)" />
+                          <text x="120" y="30" textAnchor="middle" fill="#64748b" fontSize="12" fontWeight="800">LADDER</text>
+                          
+                          {/* Sample Areas */}
+                          {[1, 2, 3].map(i => {
+                             const x = 160 + (i * 100);
+                             return (
+                               <g key={i}>
+                                 <rect x={x - 40} y={40} width="80" height="320" fill="rgba(255,255,255,0.015)" />
+                                 <text x={x} y={30} textAnchor="middle" fill={i === 1 ? "#38bdf8" : "#1e293b"} fontSize="12" fontWeight="800">
+                                   {i === 1 ? "SAMPLE" : `- ${i+1} -`}
+                                 </text>
+                               </g>
+                             )
+                          })}
+                          
+                          {/* Wells */}
+                          {[0, 1, 2, 3].map(i => (
+                            <rect key={i} x={100 + (i * 100)} y={45} width="40" height="10" fill="rgba(56,189,248,0.1)" stroke="#38bdf8" strokeWidth="1" />
+                          ))}
+
+                          {/* Ladder bands */}
+                          {(LADDERS[rdLadder] || []).map(s => {
+                            const y = 40 + (320 * (1 - Math.log10(s) / Math.log10(25000)));
+                            return (
+                              <g key={s}>
+                                <rect x="90" y={y} width="60" height="2" fill="rgba(255,255,255,0.3)" />
+                                <text x="75" y={y + 3} textAnchor="end" fill="#475569" fontSize="9" fontWeight="600">
+                                  {s >= 1000 ? (s/1000).toFixed(s % 1000 === 0 ? 0 : 1)+'k' : s}
+                                </text>
+                              </g>
+                            );
+                          })}
+
+                          {/* Sample bands (Sample Lane 1) */}
+                          {rdResult.fragments.map((f: any, i: number) => {
+                            const y = 40 + (320 * (1 - Math.min(1, Math.log10(f.size) / Math.log10(25000))));
+                            const isHigh = rdHighlighted === i;
+                            return (
+                              <motion.rect 
+                                key={i} 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                transition={{ delay: i * 0.05 }}
+                                onClick={() => setRdHighlighted(i)}
+                                x="260" y={y} width="60" height="3" 
+                                fill={isHigh ? "#fbbf24" : "#60a5fa"} 
+                                style={{ 
+                                  cursor: "pointer",
+                                  filter: isHigh ? "drop-shadow(0 0 8px #fbbf24)" : "drop-shadow(0 0 4px #3b82f6)" 
+                                }}
+                              />
+                            );
+                          })}
+                        </svg>
+                      </div>
+                      <div style={{ alignSelf: "center", color: "#475569", fontSize: "0.8rem", fontStyle: "italic" }}>
+                        Click on bands to inspect sequence and exact size.
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            ) : toolId === "pcr-simulator" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div>
+                  <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Template DNA Sequence</label>
+                  <textarea value={pcrTemplate} onChange={e => setPcrTemplate(e.target.value)} style={{ ...calcInputStyle, minHeight: "100px", fontFamily: "monospace", fontSize: "0.9rem" }} placeholder="Enter template sequence..." />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Forward Primer (5'→3')</label>
+                    <input value={pcrFwd} onChange={e => setPcrFwd(e.target.value)} style={{ ...calcInputStyle, fontFamily: "monospace" }} placeholder="[tail]AGCT..." />
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Reverse Primer (5'→3')</label>
+                    <input value={pcrRev} onChange={e => setPcrRev(e.target.value)} style={{ ...calcInputStyle, fontFamily: "monospace" }} placeholder="[tail]AGCT..." />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>PCR Kit / Polymerase (Optional)</label>
+                  <select value={pcrKit} onChange={e => setPcrKit(e.target.value)} style={calcInputStyle}>
+                    <option>Phusion (High-Fidelity)</option>
+                    <option>Q5 (High-Fidelity)</option>
+                    <option>Taq (Standard)</option>
+                    <option>OneTaq (Standard)</option>
+                  </select>
+                </div>
+                <button onClick={calcPcrSimulator} style={{ background: "#f59e0b", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(245, 158, 11, 0.3)" }}>
+                  <Play size={18} fill="black" /> Amplify & Predict
+                </button>
+
+                {pcrResult && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                    <div style={{ background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.15)", borderRadius: "20px", padding: "1.5rem" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", marginBottom: "1.25rem" }}>PCR Products Detected ({pcrResult.products.length})</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                        {pcrResult.products.map((p: any, i: number) => (
+                          <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "14px", padding: "1.25rem" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#f59e0b" }}>{p.size} <span style={{ fontSize: "0.7rem", color: "#475569" }}>BP</span></div>
+                                <div style={{ fontSize: "0.8rem", color: "#64748b" }}>Range: {p.fPos} – {p.rPos}</div>
+                              </div>
+                              <button onClick={() => { navigator.clipboard.writeText(p.sequence); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ color: "#f59e0b", background: "transparent", border: "none", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copy Product" : "Copy DNA"}
+                              </button>
+                            </div>
+                            <div style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "#94a3b8", wordBreak: "break-all", background: "rgba(0,0,0,0.2)", padding: "1rem", borderRadius: "8px", maxHeight: "120px", overflowY: "auto" }}>{p.sequence}</div>
+                          </div>
+                        ))}
+                        {pcrResult.products.length === 0 && <div style={{ color: "#f43f5e", fontWeight: 600 }}>No amplicons predicted. Primers may not anneal to template.</div>}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                      <div style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "20px", padding: "1.5rem" }}>
+                        <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", marginBottom: "1.25rem" }}>Thermocycler Program</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                          {pcrResult.program.map((s: any, i: number) => (
+                            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.6rem 0.8rem", background: s.cycle ? "rgba(245, 158, 11, 0.05)" : "transparent", borderRadius: "8px", border: s.cycle ? "1px dashed rgba(245, 158, 11, 0.2)" : "none" }}>
+                              <span style={{ color: "#94a3b8", fontSize: "0.9rem" }}>{s.step}</span>
+                              <div style={{ textAlign: "right" }}>
+                                <span style={{ color: "#f1f5f9", fontWeight: 700 }}>{s.temp}°C</span>
+                                <span style={{ color: "#475569", marginLeft: "0.75rem", fontSize: "0.85rem" }}>{s.time}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop: "1rem", padding: "0.5rem", borderTop: "1px solid rgba(255,255,255,0.05)", textAlign: "center", color: "#475569", fontSize: "0.75rem" }}>
+                          {pcrResult.products.length > 0 ? "Repeat steps 2-4 for 30 cycles." : "Check primer design."}
+                        </div>
+                      </div>
+                      <div style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "20px", padding: "1.5rem" }}>
+                        <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", marginBottom: "1.25rem" }}>Protocol Recommendations</div>
+                        <div style={{ fontSize: "0.9rem", color: "#94a3b8", lineHeight: "1.6" }}>
+                          <p>• <strong>Enzyme:</strong> {pcrResult.kit}</p>
+                          <p>• <strong>Annealing:</strong> Derived from mean Primer Tm ({pcrResult.tm}°C)</p>
+                          <p>• <strong>Extension:</strong> {pcrResult.kit.includes("Taq") ? "60s/kb" : "30s/kb"} basis</p>
+                          <div style={{ marginTop: "1rem", padding: "1rem", background: "rgba(255,255,255,0.02)", borderRadius: "10px", fontSize: "0.85rem" }}>
+                            <strong>Reaction Mix Tips:</strong><br/>
+                            - Template: 1-10ng (Plasmid) / 100ng (Gnm)<br/>
+                            - Primers: 500nM final conc.<br/>
+                            - dNTPs: 200µM each.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             ) : toolId === "ligation-calculator" ? (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
@@ -1047,7 +2429,7 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
                 />
               </>
             )}
-            {!toolId.includes("calculator") && (
+            {!toolId.includes("calculator") && !["tm-calculator","ta-calculator","molarity-calculator","centrifugation-calculator","serial-dilution-planner","unit-converter-biology","coding-capacity"].includes(toolId) && (
               <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
                 <button 
                   onClick={runAnalysis}

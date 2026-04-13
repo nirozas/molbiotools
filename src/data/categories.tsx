@@ -17,12 +17,13 @@ export const categories: Category[] = [
     description: "Sequence analysis, restriction mapping, primer design, and CRISPR tools",
     colorClass: "cat-dna",
     icon: <Dna size={26} style={{ color: "var(--cat-color)" }} />,
-    totalTools: 18,
+    totalTools: 21,
     subcategories: [
       {
         name: "Sequence Analysis",
         tools: [
           { name: "Reverse Complement", description: "Generate reverse complement of a DNA sequence", type: "internal", href: "/tools/run/reverse-complement", badge: "NEW" },
+          { name: "Coding Capacity of DNA", description: "Convert between DNA length (bp), protein length (AA), and protein size (kDa)", type: "internal", href: "/tools/run/coding-capacity", badge: "NEW" },
           { name: "GC Content Calculator", description: "Calculate GC percentage and base composition", type: "internal", href: "/tools/run/gc-content" },
           { name: "Sequence Statistics", description: "Length, composition, and melting temperature", type: "internal", href: "/tools/run/sequence-statistics" },
           { name: "DNA Concentration Calculator", description: "A260 absorbance to ng/µL concentration", type: "internal", href: "/tools/run/dna-concentration-calculator" },
@@ -31,7 +32,9 @@ export const categories: Category[] = [
       {
         name: "Restriction & Cloning",
         tools: [
+          { name: "In-Silico PCR Simulator", description: "Predict amplicons and generate protocols/programs", type: "internal", href: "/tools/run/pcr-simulator", badge: "NEW" },
           { name: "Restriction Enzyme Analyzer", description: "Find restriction sites in your sequence", type: "internal", href: "/tools/run/restriction-enzyme-analyzer" },
+          { name: "Restriction Digest & Gel", description: "Simulate digest and visualize on agarose gel", type: "internal", href: "/tools/run/restriction-digest", badge: "NEW" },
           { name: "Ligation Calculator", description: "Optimal insert:vector ratios", type: "internal", href: "/tools/run/ligation-calculator" },
           { name: "Primer Design (Primer3)", description: "Design PCR primers with Tm and GC balance", type: "external", href: "https://primer3.ut.ee/" },
         ],
@@ -91,7 +94,7 @@ export const categories: Category[] = [
     description: "Structure prediction, translation, motifs, and immunoinformatics",
     colorClass: "cat-protein",
     icon: <Layers size={26} style={{ color: "var(--cat-color)" }} />,
-    totalTools: 22,
+    totalTools: 23,
     subcategories: [
       {
         name: "Translation",
@@ -101,6 +104,7 @@ export const categories: Category[] = [
           { name: "AA Notation Converter", description: "Switch between 1-letter, 3-letter, and full name notations", type: "internal", href: "/tools/run/aa-converter", badge: "NEW" },
           { name: "Protein Property Visualizer", description: "Map RasMol colors, liability sites, and hydrophobicity on sequence", type: "internal", href: "/tools/run/protein-viewer", badge: "NEW" },
           { name: "Amino Acid Properties", description: "MW, pI, GRAVY score, extinction coefficient", type: "internal", href: "/tools/run/protein-stats" },
+          { name: "Coding Capacity of DNA", description: "Convert between DNA length (bp), protein length (AA), and protein size (kDa)", type: "internal", href: "/tools/run/coding-capacity", badge: "NEW" },
         ],
       },
       {
@@ -153,14 +157,6 @@ export const categories: Category[] = [
         ],
       },
       {
-        name: "Lab Calculators",
-        tools: [
-          { name: "Buffer Calculator", description: "pH buffers — Henderson-Hasselbalch calculator", type: "internal", href: "/tools/run/buffer-calculator" },
-          { name: "Molarity Calculator", description: "Concentration and dilution calculations", type: "internal", href: "/tools/run/molarity-calculator" },
-          { name: "OD600 Cell Density", description: "Estimate cell count from optical density", type: "internal", href: "/tools/run/od600-cell-density" },
-        ],
-      },
-      {
         name: "Enzyme Kinetics",
         tools: [
           { name: "Michaelis-Menten Fitter", description: "Fit Km and Vmax from substrate-velocity data", type: "python", href: "/tools/run/michaelis-menten-fitter" },
@@ -206,20 +202,25 @@ export const categories: Category[] = [
     description: "Essential lab math — concentrations, centrifugation, DNA/protein quantification",
     colorClass: "cat-calc",
     icon: <Calculator size={26} style={{ color: "var(--cat-color)" }} />,
-    totalTools: 10,
+    totalTools: 9,
     subcategories: [
       {
-        name: "Nucleic Acid",
+        name: "PCR & Primers",
         tools: [
-          { name: "Tm Calculator", description: "Melting temperature for oligonucleotides", type: "internal", href: "/tools/run/tm-calculator" },
+          { name: "Tm Calculator", description: "Melting temperature for oligonucleotides via nearest-neighbor thermodynamics", type: "internal", href: "/tools/run/tm-calculator", badge: "NEW" },
+          { name: "Ta Calculator", description: "Optimal annealing temperature for two primers + insert size", type: "internal", href: "/tools/run/ta-calculator", badge: "NEW" },
+          { name: "Coding Capacity of DNA", description: "Convert between DNA length (bp), protein length (AA), and protein size (kDa)", type: "internal", href: "/tools/run/coding-capacity", badge: "NEW" },
         ],
       },
       {
         name: "General Lab",
         tools: [
-          { name: "Centrifugation Calculator", description: "Convert RPM ↔ RCF with rotor radius", type: "internal", href: "/tools/run/centrifugation-calculator" },
-          { name: "Serial Dilution Planner", description: "Design serial dilution schemes", type: "internal", href: "/tools/run/serial-dilution-planner" },
-          { name: "Unit Converter (Biology)", description: "pmol/µg/µM conversions for nucleic acids", type: "internal", href: "/tools/run/unit-converter-biology-" },
+          { name: "Molarity Calculator", description: "Mass, MW and volume to molarity (M, mM, µM, nM)", type: "internal", href: "/tools/run/molarity-calculator", badge: "NEW" },
+          { name: "Buffer Calculator", description: "Acid/Base quantities via Henderson-Hasselbalch", type: "internal", href: "/tools/run/buffer-calculator", badge: "NEW" },
+          { name: "Centrifugation Calculator", description: "Convert RPM ↔ RCF with rotor radius", type: "internal", href: "/tools/run/centrifugation-calculator", badge: "NEW" },
+          { name: "OD600 Cell Density", description: "Estimate cell density for E. coli, Yeast, and others", type: "internal", href: "/tools/run/od600-cell-density", badge: "NEW" },
+          { name: "Serial Dilution Planner", description: "Design serial dilution schemes with step factor", type: "internal", href: "/tools/run/serial-dilution-planner", badge: "NEW" },
+          { name: "Unit Converter (Biology)", description: "pmol/µg/µM conversions for nucleic acids & proteins", type: "internal", href: "/tools/run/unit-converter-biology", badge: "NEW" },
         ],
       },
     ],

@@ -62,6 +62,16 @@ const TOOL_METADATA: Record<string, { title: string; description: string; catego
     description: "Find restriction sites in your sequence, formatted in a convenient table.",
     category: "DNA Tools",
   },
+  "pcr-simulator": {
+    title: "In-Silico PCR Simulator",
+    description: "Predict PCR amplicons using template DNA and primers with hanging tails. Generates optimized thermocycler programs for various polymerases.",
+    category: "DNA Tools",
+  },
+  "restriction-digest": {
+    title: "Restriction Digest & Gel Simulator",
+    description: "Simulate a double or single digest and visualize fragment migration on an agarose gel with standard 1kb ladders.",
+    category: "DNA Tools",
+  },
   "ligation-calculator": {
     title: "Ligation Calculator",
     description: "Optimal insert:vector ratios and mass calculation for standard and custom molar ratios.",
@@ -71,6 +81,51 @@ const TOOL_METADATA: Record<string, { title: string; description: string; catego
     title: "Pairwise Alignment",
     description: "Align two sequences against each other using an optimized Needleman-Wunsch algorithm.",
     category: "Alignment & BLAST",
+  },
+  "tm-calculator": {
+    title: "Tm Calculator",
+    description: "Calculate the melting temperature (Tm) of oligonucleotides using the nearest-neighbor thermodynamic model with salt correction.",
+    category: "Lab Calculators",
+  },
+  "ta-calculator": {
+    title: "Ta Calculator",
+    description: "Calculate the optimal PCR annealing temperature (Ta) for two primers and an insert, accounting for primer Tm and amplicon characteristics.",
+    category: "Lab Calculators",
+  },
+  "molarity-calculator": {
+    title: "Molarity Calculator",
+    description: "Convert between mass, molecular weight, volume, and concentration (M, mM, µM, nM) for solutions.",
+    category: "Lab Calculators",
+  },
+  "centrifugation-calculator": {
+    title: "Centrifugation Calculator",
+    description: "Bidirectional conversion between RPM and RCF (×g) using rotor radius. Includes common protocol reference table.",
+    category: "Lab Calculators",
+  },
+  "serial-dilution-planner": {
+    title: "Serial Dilution Planner",
+    description: "Plan serial dilution series with custom dilution factor, starting concentration, and number of steps.",
+    category: "Lab Calculators",
+  },
+  "unit-converter-biology": {
+    title: "Unit Converter (Biology)",
+    description: "Convert between biological units: pmol ↔ µg ↔ µM for nucleic acids and proteins using molecular weight.",
+    category: "Lab Calculators",
+  },
+  "coding-capacity": {
+    title: "Coding Capacity of DNA",
+    description: "Bidirectional calculator: convert between DNA coding length (bp), protein length (amino acids), and protein size (kDa).",
+    category: "Lab Calculators",
+  },
+  "buffer-calculator": {
+    title: "Buffer Calculator",
+    description: "Calculate the required quantities of acid and base to achieve a desired pH using the Henderson-Hasselbalch equation.",
+    category: "Lab Calculators",
+  },
+  "od600-cell-density": {
+    title: "OD600 Cell Density Estimator",
+    description: "Estimate cell density (cells/mL) from OD600 measurements for common organisms like E. coli and yeast.",
+    category: "Lab Calculators",
   },
 };
 
