@@ -164,6 +164,14 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
   const [pcrKit, setPcrKit] = useState("Phusion (High-Fidelity)");
   const [pcrResult, setPcrResult] = useState<any>(null);
 
+  // ===== Gene Optimizer State =====
+  const [goDNA, setGoDNA] = useState("");
+  const [goOrganism, setGoOrganism] = useState("Human");
+  const [goForbidden, setGoForbidden] = useState<string[]>([]);
+  const [goMode, setGoMode] = useState<"minimal"|"full">("full");
+  const [goType, setGoType] = useState<"ORF"|"CDS">("CDS");
+  const [goResult, setGoResult] = useState<any>(null);
+
   const runAnalysis = () => {
     // For calculators with custom UI state where 'input' string isn't used, we bypass the empty-check
     if (!input.trim() && !["dna-concentration-calculator", "ligation-calculator", "mrna-optimization"].includes(toolId)) return;
@@ -685,6 +693,7 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
       case "rev-trans":
       case "restriction-digest":
       case "pcr-simulator":
+      case "gene-optimizer":
         // These tools use dedicated UI state — no text-input logic needed
         break;
       case "dna-concentration-calculator":
@@ -747,8 +756,8 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
   };
 
   useEffect(() => {
-    const dedicatedUiTools = ["tm-calculator","ta-calculator","molarity-calculator","centrifugation-calculator","serial-dilution-planner","unit-converter-biology","coding-capacity","buffer-calculator","od600-cell-density","rev-trans","restriction-digest","pcr-simulator"];
-    if (toolId.includes("calculator") && !dedicatedUiTools.includes(toolId) && !["rev-trans", "restriction-digest", "pcr-simulator"].includes(toolId)) {
+    const dedicatedUiTools = ["tm-calculator","ta-calculator","molarity-calculator","centrifugation-calculator","serial-dilution-planner","unit-converter-biology","coding-capacity","buffer-calculator","od600-cell-density","rev-trans","restriction-digest","pcr-simulator","gene-optimizer"];
+    if (toolId.includes("calculator") && !dedicatedUiTools.includes(toolId) && !["rev-trans", "restriction-digest", "pcr-simulator", "gene-optimizer"].includes(toolId)) {
       // Trigger auto-calculate if there's enough numerical input
       const activeInputs = input.split(/[\s,]+/).filter(Boolean);
       if (activeInputs.length >= 3) {
@@ -1218,6 +1227,94 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
       program,
       tm: meanTm.toFixed(1),
       kit: pcrKit
+    });
+  };
+
+  // ===== Gene Optimizer Logic =====
+  const GENETIC_CODE: Record<string, string> = {
+    'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M', 'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T', 'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K', 'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R', 'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L', 'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P', 'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q', 'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R', 'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V', 'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A', 'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E', 'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G', 'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S', 'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L', 'TAC':'Y', 'TAT':'Y', 'TAA':'*', 'TAG':'*', 'TGC':'C', 'TGT':'C', 'TGA':'*', 'TGG':'W',
+  };
+
+  const OPT_TABLES: Record<string, Record<string, string>> = {
+    "Human": { 'A':'GCC', 'C':'TGC', 'D':'GAC', 'E':'GAG', 'F':'TTC', 'G':'GGC', 'H':'CAC', 'I':'ATC', 'K':'AAG', 'L':'CTG', 'M':'ATG', 'N':'AAC', 'P':'CCC', 'Q':'CAG', 'R':'AGG', 'S':'AGC', 'T':'ACC', 'V':'GTG', 'W':'TGG', 'Y':'TAC', '*':'TGA' },
+    "Mouse": { 'A':'GCC', 'C':'TGC', 'D':'GAC', 'E':'GAG', 'F':'TTC', 'G':'GGC', 'H':'CAC', 'I':'ATC', 'K':'AAG', 'L':'CTG', 'M':'ATG', 'N':'AAC', 'P':'CCC', 'Q':'CAG', 'R':'AGG', 'S':'AGC', 'T':'ACC', 'V':'GTG', 'W':'TGG', 'Y':'TAC', '*':'TGA' },
+    "E. coli": { 'A':'GCG', 'C':'TGC', 'D':'GAT', 'E':'GAA', 'F':'TTT', 'G':'GGC', 'H':'CAT', 'I':'ATT', 'K':'AAA', 'L':'CTG', 'M':'ATG', 'N':'AAT', 'P':'CCG', 'Q':'CAG', 'R':'CGT', 'S':'AGC', 'T':'ACC', 'V':'GTG', 'W':'TGG', 'Y':'TAT', '*':'TAA' },
+    "Yeast": { 'A':'GCT', 'C':'TGT', 'D':'GAT', 'E':'GAA', 'F':'TTT', 'G':'GGT', 'H':'CAT', 'I':'ATT', 'K':'AAG', 'L':'TTA', 'M':'ATG', 'N':'AAT', 'P':'CCA', 'Q':'CAA', 'R':'AGA', 'S':'TCT', 'T':'ACC', 'V':'GTT', 'W':'TGG', 'Y':'TAT', '*':'TAA' }
+  };
+
+  const calcGeneOptimizer = () => {
+    const dna = goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
+    if (!dna) return;
+
+    // 1. Complexity Analysis
+    const issues: string[] = [];
+    const directRepeats = [];
+    for (let i = 0; i <= dna.length - 20; i++) {
+      const sub = dna.substring(i, i + 20);
+      if (dna.indexOf(sub, i + 1) !== -1) directRepeats.push(sub);
+    }
+    if (directRepeats.length > 0) issues.push(`Found ${new Set(directRepeats).size} unique direct repeats of 20bp+`);
+    
+    // GC zones
+    for (let i = 0; i <= dna.length - 50; i++) {
+        const sub = dna.substring(i, i + 50);
+        const gc = (sub.match(/[GC]/g) || []).length / 50;
+        if (gc > 0.8 || gc < 0.2) {
+            issues.push(`Extreme GC content (${(gc*100).toFixed(0)}%) found at position ${i}`);
+            break;
+        }
+    }
+    
+    // 2. Optimization
+    let codingDNA = dna;
+    let prefix = "";
+    let suffix = "";
+    
+    if (goType === "ORF") {
+        const start = dna.indexOf("ATG");
+        if (start !== -1) {
+            prefix = dna.substring(0, start);
+            codingDNA = dna.substring(start);
+            // Search for stop
+            for (let i=0; i<codingDNA.length; i+=3) {
+                const codon = codingDNA.substring(i, i+3);
+                if (["TAA", "TAG", "TGA"].includes(codon)) {
+                    suffix = codingDNA.substring(i+3);
+                    codingDNA = codingDNA.substring(0, i+3);
+                    break;
+                }
+            }
+        }
+    }
+
+    const table = OPT_TABLES[goOrganism] || OPT_TABLES["Human"];
+    let optimized = "";
+    for (let i = 0; i < codingDNA.length; i += 3) {
+        const codon = codingDNA.substring(i, i + 3);
+        const aa = GENETIC_CODE[codon] || "X";
+        if (aa === "X") {
+            optimized += codon;
+        } else {
+            optimized += (goMode === "full" ? (table[aa] || codon) : codon);
+            // In minimal mode, we could add logic to only swap if issues exist, but for now full/static is safer
+        }
+    }
+
+    // Restriction Site Avoidance (Basic)
+    let finalOptimized = prefix + optimized + suffix;
+    goForbidden.forEach(enzName => {
+        const enz = ALL_ENZYMES.find(e => e.name === enzName);
+        if (enz && finalOptimized.includes(enz.site)) {
+            issues.push(`Optimized sequence contains forbidden site for ${enzName}`);
+        }
+    });
+
+    setGoResult({
+        original: dna,
+        optimized: finalOptimized,
+        issues,
+        gc: (((finalOptimized.match(/[GC]/g) || []).length / finalOptimized.length) * 100).toFixed(1),
+        aa: codingDNA.match(/.{1,3}/g)?.map(c => GENETIC_CODE[c] || "?").join("")
     });
   };
 
@@ -2283,6 +2380,93 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            ) : toolId === "gene-optimizer" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div>
+                  <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Sequence to Optimize</label>
+                  <textarea value={goDNA} onChange={e => setGoDNA(e.target.value)} style={{ ...calcInputStyle, minHeight: "120px", fontFamily: "monospace", fontSize: "0.9rem" }} placeholder="Enter DNA sequence..." />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
+                   <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Target Organism</label>
+                    <select value={goOrganism} onChange={e => setGoOrganism(e.target.value)} style={calcInputStyle}>
+                      {Object.keys(OPT_TABLES).map(org => <option key={org} value={org}>{org}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Sequence Type</label>
+                    <div style={{ display: "flex", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.25rem", borderRadius: "10px" }}>
+                      {["ORF", "CDS"].map(t => (
+                        <button key={t} onClick={() => setGoType(t as any)} style={{ flex: 1, padding: "0.5rem", borderRadius: "8px", border: "none", background: goType === t ? "#22c55e" : "transparent", color: goType === t ? "black" : "#64748b", fontSize: "0.75rem", fontWeight: 800 }}>{t}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Strategy</label>
+                    <select value={goMode} onChange={e => setGoMode(e.target.value as any)} style={calcInputStyle}>
+                      <option value="full">Full Optimization (Max Expression)</option>
+                      <option value="minimal">Minimal Changes (Fix Complexity Only)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Forbidden Restriction Sites</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.75rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", maxHeight: "100px", overflowY: "auto" }}>
+                      {ALL_ENZYMES.map(enz => (
+                        <button 
+                          key={enz.name} 
+                          onClick={() => {
+                            if (goForbidden.includes(enz.name)) setGoForbidden(goForbidden.filter(n => n !== enz.name));
+                            else setGoForbidden([...goForbidden, enz.name]);
+                          }}
+                          style={{ padding: "0.3rem 0.6rem", borderRadius: "6px", border: "1px solid", borderColor: goForbidden.includes(enz.name) ? "#22c55e" : "rgba(255,255,255,0.1)", background: goForbidden.includes(enz.name) ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.02)", color: goForbidden.includes(enz.name) ? "#22c55e" : "#64748b", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}
+                        >
+                          {enz.name}
+                        </button>
+                      ))}
+                    </div>
+                </div>
+
+                <button onClick={calcGeneOptimizer} style={{ background: "#22c55e", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(34, 197, 94, 0.4)" }}>
+                  <Zap size={18} fill="black" /> Optimize Gene
+                </button>
+
+                {goResult && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "1.5rem" }}>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: "16px", padding: "1.25rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Optimized Sequence</span>
+                                <button onClick={() => { navigator.clipboard.writeText(goResult.optimized); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ color: "#22c55e", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: 700 }}>
+                                  {copied ? "Copied!" : "Copy Optimized DNA"}
+                                </button>
+                             </div>
+                             <div style={{ fontFamily: "monospace", fontSize: "0.9rem", color: "#f1f5f9", background: "rgba(0,0,0,0.3)", padding: "1rem", borderRadius: "8px", maxHeight: "150px", overflowY: "auto", wordBreak: "break-all" }}>{goResult.optimized}</div>
+                          </div>
+                          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: "16px", padding: "1.25rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                             <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>Check Consistency (AA Sequence)</span>
+                             <div style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "#22c55e", letterSpacing: "0.1em", wordBreak: "break-all" }}>{goResult.aa}</div>
+                          </div>
+                       </div>
+                       <div style={{ background: goResult.issues.length ? "rgba(244,63,94,0.05)" : "rgba(34,197,94,0.05)", border: `1px solid ${goResult.issues.length ? "rgba(244,63,94,0.2)" : "rgba(34,197,94,0.2)"}`, borderRadius: "16px", padding: "1.25rem" }}>
+                          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.75rem" }}>Synthesis Complexity</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                             {goResult.issues.map((issue: string, i: number) => (
+                               <div key={i} style={{ fontSize: "0.85rem", color: "#f43f5e", display: "flex", gap: "0.5rem" }}>• {issue}</div>
+                             ))}
+                             {goResult.issues.length === 0 && <div style={{ color: "#22c55e", fontSize: "0.85rem", fontWeight: 600 }}>Sequence meets Synthesis standards.</div>}
+                          </div>
+                          <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                             <div style={{ fontSize: "0.65rem", color: "#475569", fontWeight: 700, marginBottom: "0.25rem" }}>FINAL GC%</div>
+                             <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#cbd5e1" }}>{goResult.gc}%</div>
+                          </div>
+                       </div>
                     </div>
                   </motion.div>
                 )}

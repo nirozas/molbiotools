@@ -62,6 +62,11 @@ const TOOL_METADATA: Record<string, { title: string; description: string; catego
     description: "Find restriction sites in your sequence, formatted in a convenient table.",
     category: "DNA Tools",
   },
+  "gene-optimizer": {
+    title: "Gene Optimizer & Complexity Checker",
+    description: "Evaluate DNA synthesis complexity (repeats, GC extremeness) and perform codon optimization for mammalian and microbial expression plants.",
+    category: "DNA Tools",
+  },
   "pcr-simulator": {
     title: "In-Silico PCR Simulator",
     description: "Predict PCR amplicons using template DNA and primers with hanging tails. Generates optimized thermocycler programs for various polymerases.",

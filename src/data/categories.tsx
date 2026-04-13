@@ -17,12 +17,13 @@ export const categories: Category[] = [
     description: "Sequence analysis, restriction mapping, primer design, and CRISPR tools",
     colorClass: "cat-dna",
     icon: <Dna size={26} style={{ color: "var(--cat-color)" }} />,
-    totalTools: 21,
+    totalTools: 22,
     subcategories: [
       {
         name: "Sequence Analysis",
         tools: [
           { name: "Reverse Complement", description: "Generate reverse complement of a DNA sequence", type: "internal", href: "/tools/run/reverse-complement", badge: "NEW" },
+          { name: "Gene Optimizer & Complexity", description: "Check synthesis complexity and optimize codons", type: "internal", href: "/tools/run/gene-optimizer", badge: "NEW" },
           { name: "Coding Capacity of DNA", description: "Convert between DNA length (bp), protein length (AA), and protein size (kDa)", type: "internal", href: "/tools/run/coding-capacity", badge: "NEW" },
           { name: "GC Content Calculator", description: "Calculate GC percentage and base composition", type: "internal", href: "/tools/run/gc-content" },
           { name: "Sequence Statistics", description: "Length, composition, and melting temperature", type: "internal", href: "/tools/run/sequence-statistics" },
