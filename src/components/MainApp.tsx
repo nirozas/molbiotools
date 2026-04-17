@@ -26,6 +26,7 @@ interface AnalysisResults {
 
 export default function MainApp() {
     const [results, setResults] = useState<AnalysisResults | null>(null);
+    const [queryMeta, setQueryMeta] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [mhcClass, setMhcClass] = useState<'I' | 'II'>('I');
@@ -34,6 +35,7 @@ export default function MainApp() {
         setLoading(true);
         setError(null);
         try {
+            setQueryMeta(formData);
             const response = await axios.post(`${API_BASE}/predict`, formData);
             setResults(response.data);
             setTimeout(() => {
@@ -318,7 +320,7 @@ export default function MainApp() {
                                         Analysis Results
                                     </h2>
                                 </div>
-                                <MHCVisualizer data={results} currentClass={mhcClass} />
+                                <MHCVisualizer data={results} currentClass={mhcClass} meta={queryMeta} />
                             </motion.div>
                         )}
                     </AnimatePresence>

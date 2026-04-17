@@ -166,11 +166,18 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
 
   // ===== Gene Optimizer State =====
   const [goDNA, setGoDNA] = useState("");
+  const [goStep, setGoStep] = useState(1);
   const [goOrganism, setGoOrganism] = useState("Human");
   const [goForbidden, setGoForbidden] = useState<string[]>([]);
   const [goMode, setGoMode] = useState<"minimal"|"full">("full");
-  const [goType, setGoType] = useState<"ORF"|"CDS">("CDS");
+  const [goType, setGoType] = useState<"ORF"|"CDS"|"NONE">("CDS");
+  const [goRange, setGoRange] = useState({ start: 1, end: 1 });
+  const [goPreserved, setGoPreserved] = useState<{ start: number, end: number }[]>([]);
+  const [goPreserveInput, setGoPreserveInput] = useState({ start: "", end: "" });
+  const [goEnzSearch, setGoEnzSearch] = useState("");
   const [goResult, setGoResult] = useState<any>(null);
+  const [goAnalysis, setGoAnalysis] = useState<any>(null);
+  const [goTranslation, setGoTranslation] = useState("");
 
   const runAnalysis = () => {
     // For calculators with custom UI state where 'input' string isn't used, we bypass the empty-check
@@ -1242,79 +1249,435 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
     "Yeast": { 'A':'GCT', 'C':'TGT', 'D':'GAT', 'E':'GAA', 'F':'TTT', 'G':'GGT', 'H':'CAT', 'I':'ATT', 'K':'AAG', 'L':'TTA', 'M':'ATG', 'N':'AAT', 'P':'CCA', 'Q':'CAA', 'R':'AGA', 'S':'TCT', 'T':'ACC', 'V':'GTT', 'W':'TGG', 'Y':'TAT', '*':'TAA' }
   };
 
-  const calcGeneOptimizer = () => {
+  const runGeneAnalysisStep = () => {
     const dna = goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
     if (!dna) return;
 
-    // 1. Complexity Analysis
     const issues: string[] = [];
-    const directRepeats = [];
-    for (let i = 0; i <= dna.length - 20; i++) {
-      const sub = dna.substring(i, i + 20);
-      if (dna.indexOf(sub, i + 1) !== -1) directRepeats.push(sub);
-    }
-    if (directRepeats.length > 0) issues.push(`Found ${new Set(directRepeats).size} unique direct repeats of 20bp+`);
+    const repeatRanges: { start: number, end: number, color: string, label: string }[] = [];
     
-    // GC zones
-    for (let i = 0; i <= dna.length - 50; i++) {
-        const sub = dna.substring(i, i + 50);
-        const gc = (sub.match(/[GC]/g) || []).length / 50;
-        if (gc > 0.8 || gc < 0.2) {
-            issues.push(`Extreme GC content (${(gc*100).toFixed(0)}%) found at position ${i}`);
-            break;
+    // Improved Repeat Detection (Sliding Window 12bp+)
+    const K = 12;
+    const seen = new Map<string, number[]>();
+    for (let i = 0; i <= dna.length - K; i++) {
+        const kmer = dna.substring(i, i + K);
+        if (!seen.has(kmer)) seen.set(kmer, []);
+        seen.get(kmer)!.push(i);
+    }
+    
+    seen.forEach((positions, kmer) => {
+        if (positions.length > 1) {
+            positions.forEach(pos => {
+                repeatRanges.push({ start: pos + 1, end: pos + K, color: "#f59e0b", label: "Repeat" });
+            });
         }
-    }
-    
-    // 2. Optimization
-    let codingDNA = dna;
-    let prefix = "";
-    let suffix = "";
-    
-    if (goType === "ORF") {
-        const start = dna.indexOf("ATG");
-        if (start !== -1) {
-            prefix = dna.substring(0, start);
-            codingDNA = dna.substring(start);
-            // Search for stop
-            for (let i=0; i<codingDNA.length; i+=3) {
-                const codon = codingDNA.substring(i, i+3);
-                if (["TAA", "TAG", "TGA"].includes(codon)) {
-                    suffix = codingDNA.substring(i+3);
-                    codingDNA = codingDNA.substring(0, i+3);
-                    break;
-                }
+    });
+
+    // Merge adjacent/overlapping repeats for cleaner UI
+    const mergedRepeats = repeatRanges.sort((a,b) => a.start - b.start).reduce((acc: any[], curr) => {
+        if (!acc.length) return [curr];
+        const last = acc[acc.length - 1];
+        if (curr.start <= last.end + 1) {
+            last.end = Math.max(last.end, curr.end);
+            return acc;
+        }
+        acc.push(curr);
+        return acc;
+    }, []);
+
+    // Homopolymers
+    const homos = dna.match(/(A{10,}|T{10,}|G{10,}|C{10,})/g);
+    if (homos) issues.push(`Found ${homos.length} homopolymer runs (10bp+).`);
+    if (mergedRepeats.length > 0) issues.push(`Found ${mergedRepeats.length} high-complexity repeat zones.`);
+
+    setGoAnalysis({ issues, length: dna.length, repeats: mergedRepeats });
+    setGoRange({ start: 1, end: dna.length });
+  };
+
+  const getRasMolColor = (aa: string) => {
+    const colors: Record<string, string> = {
+      'D': '#E60A0A', 'E': '#E60A0A', // Acidic
+      'C': '#E6E600', 'M': '#E6E600', // Sulphur
+      'K': '#145AFF', 'R': '#145AFF', // Basic
+      'S': '#FA9600', 'T': '#FA9600', // Polar
+      'F': '#3232AA', 'Y': '#3232AA', // Aromatic
+      'N': '#00DCDC', 'Q': '#00DCDC', // Amide
+      'G': '#EBEBEB', // Hydrophobic (Small)
+      'L': '#0F820F', 'V': '#0F820F', 'I': '#0F820F', // Hydrophobic
+      'A': '#C8C8C8', // Hydrophobic
+      'W': '#B45AB4', // Aromatic (Large)
+      'H': '#8282D2', // Basic (Pale)
+      'P': '#DC9682', // Proline
+    };
+    return colors[aa] || '#64748b';
+  };
+
+  const calcGeneTranslation = () => {
+    const dna = goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
+    let coding = "";
+    if (goType === "CDS") {
+        coding = dna.substring(goRange.start - 1, goRange.end);
+    } else if (goType === "ORF") {
+        // Find first ATG after start
+        const startIdx = dna.indexOf("ATG", goRange.start - 1);
+        if (startIdx !== -1) {
+            const sub = dna.substring(startIdx);
+            for (let i=0; i<sub.length; i+=3) {
+                const codon = sub.substring(i, i+3);
+                coding += codon;
+                if (["TAA", "TAG", "TGA"].includes(codon)) break;
             }
         }
     }
+    
+    if (!coding) { setGoTranslation("No valid sequence found."); return; }
+    const aa = coding.match(/.{1,3}/g)?.map(c => GENETIC_CODE[c] || "?").join("") || "";
+    setGoTranslation(aa);
+  };
 
+  const calcGeneOptimizer = () => {
+    const dna = goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
     const table = OPT_TABLES[goOrganism] || OPT_TABLES["Human"];
-    let optimized = "";
-    for (let i = 0; i < codingDNA.length; i += 3) {
-        const codon = codingDNA.substring(i, i + 3);
-        const aa = GENETIC_CODE[codon] || "X";
-        if (aa === "X") {
-            optimized += codon;
+  const RANKED_CODONS: Record<string, Record<string, string[]>> = {
+    "Human": {
+      "A": ["GCC", "GCT", "GCA", "GCG"],
+      "C": ["TGC", "TGT"],
+      "D": ["GAC", "GAT"],
+      "E": ["GAG", "GAA"],
+      "F": ["TTC", "TTT"],
+      "G": ["GGC", "GGA", "GGG", "GGT"],
+      "H": ["CAC", "CAT"],
+      "I": ["ATC", "ATT", "ATA"],
+      "K": ["AAG", "AAA"],
+      "L": ["CTG", "CTC", "TTG", "CTT", "TTA", "CTA"],
+      "M": ["ATG"],
+      "N": ["AAC", "AAT"],
+      "P": ["CCC", "CCT", "CCA", "CCG"],
+      "Q": ["CAG", "CAA"],
+      "R": ["AGG", "AGA", "CGG", "CGC", "CGA", "CGT"],
+      "S": ["AGC", "TCC", "TCT", "AGT", "TCA", "TCG"],
+      "T": ["ACC", "ACT", "ACA", "ACG"],
+      "V": ["GTG", "GTC", "GTT", "GTA"],
+      "W": ["TGG"],
+      "Y": ["TAC", "TAT"],
+      "*": ["TGA", "TAA", "TAG"]
+    },
+    "E. coli": {
+      "A": ["GCG", "GCC", "GCT", "GCA"],
+      "C": ["TGC", "TGT"],
+      "D": ["GAT", "GAC"],
+      "E": ["GAA", "GAG"],
+      "F": ["TTT", "TTC"],
+      "G": ["GGC", "GGT", "GGG", "GGA"],
+      "H": ["CAT", "CAC"],
+      "I": ["ATT", "ATC", "ATA"],
+      "K": ["AAA", "AAG"],
+      "L": ["CTG", "TTA", "TTG", "CTC", "CTT", "CTA"],
+      "M": ["ATG"],
+      "N": ["AAT", "AAC"],
+      "P": ["CCG", "CCA", "CCT", "CCC"],
+      "Q": ["CAG", "CAA"],
+      "R": ["CGT", "CGC", "CGG", "CGA", "AGA", "AGG"],
+      "S": ["AGC", "TCT", "AGT", "TCC", "TCA", "TCG"],
+      "T": ["ACC", "ACG", "ACT", "ACA"],
+      "V": ["GTG", "GTT", "GTC", "GTA"],
+      "W": ["TGG"],
+      "Y": ["TAT", "TAC"],
+      "*": ["TAA", "TGA", "TAG"]
+    }
+  };
+
+    
+    // Reverse Table for Synonyms
+    const synonyms: Record<string, string[]> = {};
+    Object.entries(GENETIC_CODE).forEach(([codon, aa]) => {
+      if (!synonyms[aa]) synonyms[aa] = [];
+      synonyms[aa].push(codon);
+    });
+
+    let prefix = "";
+    let coding = "";
+    let suffix = "";
+    let codingStartOffset = 0;
+    
+    if (goType === "CDS") {
+        prefix = dna.substring(0, goRange.start - 1);
+        coding = dna.substring(goRange.start - 1, goRange.end);
+        suffix = dna.substring(goRange.end);
+        codingStartOffset = goRange.start - 1;
+    } else if (goType === "ORF") {
+        const startIdx = dna.indexOf("ATG", goRange.start - 1);
+        if (startIdx !== -1) {
+            prefix = dna.substring(0, startIdx);
+            codingStartOffset = startIdx;
+            const sub = dna.substring(startIdx);
+            let endIdx = sub.length;
+            for (let i=0; i<sub.length; i+=3) {
+                const codon = sub.substring(i, i+3);
+                coding += codon;
+                if (["TAA", "TAG", "TGA"].includes(codon)) { endIdx = i + 3; break; }
+            }
+            suffix = sub.substring(endIdx);
+        } else { coding = dna; }
+    } else { coding = dna; }
+
+    const isPreserved = (idx: number) => goPreserved.some(p => idx >= p.start && idx <= p.end);
+
+    // Initial Optimization Pass
+    let optimizedCodons: string[] = [];
+    for (let i = 0; i < coding.length; i += 3) {
+        const globalIdx = codingStartOffset + i + 1;
+        const originalCodon = coding.substring(i, i + 3);
+        const aa = GENETIC_CODE[originalCodon] || "X";
+        
+        if (isPreserved(globalIdx) || isPreserved(globalIdx+1) || isPreserved(globalIdx+2)) {
+            optimizedCodons.push(originalCodon);
         } else {
-            optimized += (goMode === "full" ? (table[aa] || codon) : codon);
-            // In minimal mode, we could add logic to only swap if issues exist, but for now full/static is safer
+            optimizedCodons.push(aa === "X" ? originalCodon : (goMode === "full" ? (table[aa] || originalCodon) : originalCodon));
         }
     }
 
-    // Restriction Site Avoidance (Basic)
-    let finalOptimized = prefix + optimized + suffix;
+    let finalOptimized = prefix + optimizedCodons.join("") + suffix;
+
+    // "Forbidden sites" are only those that were NOT in the original sequence
+    const forbiddenEnzymes = goForbidden.map(f => ALL_ENZYMES.find(e => e.name === f)).filter(Boolean);
+    
+    // Preliminary check: Where were the sites originally?
+    const originalSitesMap = new Map<string, number[]>();
+    forbiddenEnzymes.forEach(enz => {
+      if (!enz) return;
+      const positions: number[] = [];
+      let pos = dna.indexOf(enz.site);
+      while (pos !== -1) {
+        positions.push(pos);
+        pos = dna.indexOf(enz.site, pos + 1);
+      }
+      originalSitesMap.set(enz.name, positions);
+    });
+ 
+    
+    const getRankedSynonyms = (aa: string) => {
+        const org = goOrganism.includes("E. coli") ? "E. coli" : "Human";
+        return RANKED_CODONS[org]?.[aa] || synonyms[aa] || [];
+    };
+
+    let iterations = 0;
+    let issuesFixed = 0;
+
+    const reverseComplement = (dna: string) => {
+      const map: any = { 'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G' };
+      return dna.split('').map(c => map[c] || c).reverse().join('');
+    };
+
+    while (iterations < 500) {
+        let issueFound = false;
+        
+        // 1. Check Restrictions (Newly introduced only)
+        for (const enz of forbiddenEnzymes) {
+            if (!enz) continue;
+            let idx = finalOptimized.indexOf(enz.site);
+            while (idx !== -1) {
+              if (!(originalSitesMap.get(enz.name) || []).includes(idx)) {
+                issueFound = true;
+                const matchLen = enz.site.length;
+                // WORK BACKWARDS for surgical fix at the end of the site
+                for (let j = optimizedCodons.length - 1; j >= 0; j--) {
+                    const cStart = codingStartOffset + (j * 3);
+                    const cEnd = cStart + 2;
+                    if (cStart < idx + matchLen && cEnd >= idx) {
+                        if (!isPreserved(cStart + 1)) {
+                            const aa = GENETIC_CODE[optimizedCodons[j]];
+                            const ranked = getRankedSynonyms(aa);
+                            const nextBest = ranked.find(c => c !== optimizedCodons[j]);
+                            if (nextBest) {
+                                optimizedCodons[j] = nextBest;
+                                finalOptimized = prefix + optimizedCodons.join("") + suffix;
+                                issuesFixed++;
+                                break; 
+                            }
+                        }
+                    }
+                }
+                break;
+              }
+              idx = finalOptimized.indexOf(enz.site, idx + 1);
+            }
+            if (issueFound) break;
+        }
+
+        // 2. Check Homopolymers (>10bp runs)
+        if (!issueFound) {
+            const polyMatch = finalOptimized.match(/([ATGC])\1{10,}/);
+            if (polyMatch) {
+                issueFound = true;
+                const idx = polyMatch.index || 0;
+                const matchLen = polyMatch[0].length;
+                // WORK BACKWARDS from end of run
+                for (let j = optimizedCodons.length - 1; j >= 0; j--) {
+                    const cStart = codingStartOffset + (j * 3);
+                    const cEnd = cStart + 2;
+                    if (cStart < idx + matchLen && cEnd >= idx && !isPreserved(cStart + 1)) {
+                        const aa = GENETIC_CODE[optimizedCodons[j]];
+                        const ranked = getRankedSynonyms(aa);
+                        const nextBest = ranked.find(c => c !== optimizedCodons[j]);
+                        if (nextBest) {
+                            optimizedCodons[j] = nextBest;
+                            finalOptimized = prefix + optimizedCodons.join("") + suffix;
+                            issuesFixed++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Check Direct & Inverted Repeats (>15bp)
+        if (!issueFound) {
+            const K = 15;
+            const seen = new Map<string, number>();
+            for (let i = 0; i <= finalOptimized.length - K; i++) {
+                const kmer = finalOptimized.substring(i, i + K);
+                const rckmer = reverseComplement(kmer);
+                
+                // Direct Repeat
+                if (seen.has(kmer)) {
+                    issueFound = true;
+                    const firstPos = seen.get(kmer)!;
+                    const matchLen = K;
+                    let fixed = false;
+                    let fixedCount = 0;
+                    for (let j = optimizedCodons.length - 1; j >= 0; j--) {
+                        const cStart = codingStartOffset + (j * 3);
+                        const cEnd = cStart + 2;
+                        if (cStart < i + matchLen && cEnd >= i && !isPreserved(cStart + 1)) {
+                            const aa = GENETIC_CODE[optimizedCodons[j]];
+                            const ranked = getRankedSynonyms(aa);
+                            const nextBest = ranked.find(c => c !== optimizedCodons[j]);
+                            if (nextBest) {
+                                optimizedCodons[j] = nextBest;
+                                fixed = true;
+                                fixedCount++;
+                                if (fixedCount >= 2) break;
+                            }
+                        }
+                    }
+                    if (!fixed) {
+                        let fixedCount2 = 0;
+                        for (let j = optimizedCodons.length - 1; j >= 0; j--) {
+                            const cStart = codingStartOffset + (j * 3);
+                            const cEnd = cStart + 2;
+                            if (cStart < firstPos + matchLen && cEnd >= firstPos && !isPreserved(cStart + 1)) {
+                                const aa = GENETIC_CODE[optimizedCodons[j]];
+                                const ranked = getRankedSynonyms(aa);
+                                const nextBest = ranked.find(c => c !== optimizedCodons[j]);
+                                if (nextBest) {
+                                    optimizedCodons[j] = nextBest;
+                                    fixed = true;
+                                    fixedCount2++;
+                                    if (fixedCount2 >= 2) break;
+                                }
+                            }
+                        }
+                    }
+                    if (fixed) {
+                        finalOptimized = prefix + optimizedCodons.join("") + suffix;
+                        issuesFixed++;
+                    }
+                    break;
+                }
+                
+                // Inverted Repeat
+                if (seen.has(rckmer)) {
+                    issueFound = true;
+                    const firstPos = seen.get(rckmer)!;
+                    const matchLen = K;
+                    let fixed = false;
+                    let fixedCount = 0;
+                    for (let j = optimizedCodons.length - 1; j >= 0; j--) {
+                        const cStart = codingStartOffset + (j * 3);
+                        const cEnd = cStart + 2;
+                        if (cStart < i + matchLen && cEnd >= i && !isPreserved(cStart + 1)) {
+                            const aa = GENETIC_CODE[optimizedCodons[j]];
+                            const ranked = getRankedSynonyms(aa);
+                            const nextBest = ranked.find(c => c !== optimizedCodons[j]);
+                            if (nextBest) {
+                                optimizedCodons[j] = nextBest;
+                                fixed = true;
+                                fixedCount++;
+                                if (fixedCount >= 2) break;
+                            }
+                        }
+                    }
+                    if (!fixed) {
+                        let fixedCount2 = 0;
+                        for (let j = optimizedCodons.length - 1; j >= 0; j--) {
+                            const cStart = codingStartOffset + (j * 3);
+                            const cEnd = cStart + 2;
+                            if (cStart < firstPos + matchLen && cEnd >= firstPos && !isPreserved(cStart + 1)) {
+                                const aa = GENETIC_CODE[optimizedCodons[j]];
+                                const ranked = getRankedSynonyms(aa);
+                                const nextBest = ranked.find(c => c !== optimizedCodons[j]);
+                                if (nextBest) {
+                                    optimizedCodons[j] = nextBest;
+                                    fixed = true;
+                                    fixedCount2++;
+                                    if (fixedCount2 >= 2) break;
+                                }
+                            }
+                        }
+                    }
+                    if (fixed) {
+                        finalOptimized = prefix + optimizedCodons.join("") + suffix;
+                        issuesFixed++;
+                    }
+                    break;
+                }
+
+                seen.set(kmer, i);
+            }
+        }
+
+
+        if (!issueFound) break;
+        iterations++;
+    }
+
+    const finalIssues: string[] = [];
     goForbidden.forEach(enzName => {
         const enz = ALL_ENZYMES.find(e => e.name === enzName);
         if (enz && finalOptimized.includes(enz.site)) {
-            issues.push(`Optimized sequence contains forbidden site for ${enzName}`);
+            const origPos = dna.indexOf(enz.site);
+            if (origPos === -1) finalIssues.push(`CRITICAL: Forbidden site ${enzName} remains in optimized sequence.`);
         }
     });
+
+    // Final Post-Optimization Validation (Check for remaining complexity issues)
+    const postPoly = finalOptimized.match(/([ATGC])\1{10,}/);
+    if (postPoly) finalIssues.push("Warning: Homopolymer run remains (consider manual adjustment).");
+    
+    let hasRep = false;
+    const K = 15;
+    const finalSeen = new Set();
+    for (let i = 0; i <= finalOptimized.length - K; i++) {
+        const kmer = finalOptimized.substring(i, i + K);
+        if (finalSeen.has(kmer)) { hasRep = true; break; }
+        finalSeen.add(kmer);
+    }
+    if (hasRep) finalIssues.push("Warning: Sequence repetitions detected (>15bp).");
+
+    let ntChanges = 0;
+    for (let i = 0; i < dna.length; i++) {
+        if (dna[i] !== finalOptimized[i]) ntChanges++;
+    }
 
     setGoResult({
         original: dna,
         optimized: finalOptimized,
-        issues,
+        issues: finalIssues,
+        sitesFixed: issuesFixed,
+        ntChanges: ntChanges,
         gc: (((finalOptimized.match(/[GC]/g) || []).length / finalOptimized.length) * 100).toFixed(1),
-        aa: codingDNA.match(/.{1,3}/g)?.map(c => GENETIC_CODE[c] || "?").join("")
+        aa: coding.match(/.{1,3}/g)?.map(c => GENETIC_CODE[c] || "?").join("")
     });
   };
 
@@ -2386,91 +2749,383 @@ export default function ToolHost({ toolId, title, description, category }: ToolH
               </div>
             ) : toolId === "gene-optimizer" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                <div>
-                  <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Sequence to Optimize</label>
-                  <textarea value={goDNA} onChange={e => setGoDNA(e.target.value)} style={{ ...calcInputStyle, minHeight: "120px", fontFamily: "monospace", fontSize: "0.9rem" }} placeholder="Enter DNA sequence..." />
+                {/* Step Indicator */}
+                <div style={{ display: "flex", gap: "1rem", marginBottom: "0.5rem" }}>
+                  {[1, 2, 3].map(s => (
+                    <div key={s} style={{ flex: 1, height: "4px", background: goStep >= s ? "#22c55e" : "rgba(255,255,255,0.05)", borderRadius: "2px" }} />
+                  ))}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
-                   <div>
-                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Target Organism</label>
-                    <select value={goOrganism} onChange={e => setGoOrganism(e.target.value)} style={calcInputStyle}>
-                      {Object.keys(OPT_TABLES).map(org => <option key={org} value={org}>{org}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Sequence Type</label>
-                    <div style={{ display: "flex", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.25rem", borderRadius: "10px" }}>
-                      {["ORF", "CDS"].map(t => (
-                        <button key={t} onClick={() => setGoType(t as any)} style={{ flex: 1, padding: "0.5rem", borderRadius: "8px", border: "none", background: goType === t ? "#22c55e" : "transparent", color: goType === t ? "black" : "#64748b", fontSize: "0.75rem", fontWeight: 800 }}>{t}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Strategy</label>
-                    <select value={goMode} onChange={e => setGoMode(e.target.value as any)} style={calcInputStyle}>
-                      <option value="full">Full Optimization (Max Expression)</option>
-                      <option value="minimal">Minimal Changes (Fix Complexity Only)</option>
-                    </select>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
+                  <span style={{ color: "#22c55e", fontSize: "0.75rem", fontWeight: 800 }}>STEP {goStep}: {goStep === 1 ? "ANALYSIS & REGION" : goStep === 2 ? "VERIFY TRANSLATION" : "OPTIMIZATION"}</span>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    {goStep > 1 && <button onClick={() => setGoStep(goStep - 1)} style={{ background: "rgba(255,255,255,0.05)", color: "white", border: "none", padding: "0.3rem 0.6rem", borderRadius: "6px", fontSize: "0.7rem", cursor: "pointer" }}>Back</button>}
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ color: "#94a3b8", fontSize: "0.8rem", display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>Forbidden Restriction Sites</label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.75rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", maxHeight: "100px", overflowY: "auto" }}>
-                      {ALL_ENZYMES.map(enz => (
-                        <button 
-                          key={enz.name} 
-                          onClick={() => {
-                            if (goForbidden.includes(enz.name)) setGoForbidden(goForbidden.filter(n => n !== enz.name));
-                            else setGoForbidden([...goForbidden, enz.name]);
-                          }}
-                          style={{ padding: "0.3rem 0.6rem", borderRadius: "6px", border: "1px solid", borderColor: goForbidden.includes(enz.name) ? "#22c55e" : "rgba(255,255,255,0.1)", background: goForbidden.includes(enz.name) ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.02)", color: goForbidden.includes(enz.name) ? "#22c55e" : "#64748b", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}
-                        >
-                          {enz.name}
-                        </button>
-                      ))}
+                {goStep === 1 && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                    <div>
+                      <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700, textTransform: "uppercase" }}>1. Enter Sequence</label>
+                      <textarea value={goDNA} onChange={e => setGoDNA(e.target.value)} style={{ ...calcInputStyle, minHeight: "100px", fontFamily: "monospace", fontSize: "0.9rem" }} placeholder="Enter DNA sequence..." />
                     </div>
-                </div>
+                    <button onClick={runGeneAnalysisStep} style={{ background: "#22c55e", color: "black", border: "none", borderRadius: "12px", padding: "0.75rem", fontWeight: 800, cursor: "pointer" }}>Analyze Complexity</button>
+                    
+                    {goAnalysis && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                        <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)", padding: "2rem", overflowX: "auto" }}>
+                          <div style={{ minWidth: "1150px", paddingBottom: "1rem" }}>
+                            {/* Ruler and DNA Map */}
+                            {goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase().match(/.{1,80}/g)?.map((chunk, rowIdx) => (
+                              <div key={rowIdx} style={{ marginBottom: "3rem", position: "relative" }}>
+                                {/* Ticks */}
+                                <div style={{ display: "flex", height: "15px", marginBottom: "4px" }}>
+                                  {chunk.split('').map((_, i) => (
+                                    <div key={i} style={{ width: "14px", borderLeft: (rowIdx*80+i+1) % 10 === 0 ? "1px solid #475569" : "none", position: "relative", flexShrink: 0 }}>
+                                      {(rowIdx*80+i+1) % 10 === 0 && <span style={{ position: "absolute", top: "-12px", left: "-6px", fontSize: "10px", color: "#64748b" }}>{rowIdx*80+i+1}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                                {/* Sequence */}
+                                <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "14px", fontWeight: 700, color: "white" }}>
+                                  {chunk.split('').map((char, i) => (
+                                    <div key={i} style={{ width: "14px", textAlign: "center", flexShrink: 0 }}>{char}</div>
+                                  ))}
+                                </div>
+                                {/* Feature Bars (Repeats) */}
+                                <div style={{ position: "relative", height: "30px", marginTop: "8px" }}>
+                                  {goAnalysis.repeats.map((rep, i) => {
+                                      const start = rowIdx * 80;
+                                      const end = start + 80;
+                                      if (rep.start <= end && rep.end >= start + 1) {
+                                          const left = Math.max(0, rep.start - 1 - start) * 14;
+                                          const width = (Math.min(end, rep.end) - Math.max(start + 1, rep.start) + 1) * 14;
+                                          return (
+                                            <div key={i} style={{ position: "absolute", top: "0", left: `${left}px`, width: `${width}px`, height: "6px", background: "#f59e0b", borderRadius: "100px", opacity: 0.8 }}>
+                                               <span style={{ position: "absolute", bottom: "-14px", left: "0", fontSize: "8px", fontWeight: 800, color: "#f59e0b", whiteSpace: "nowrap" }}>REPEAT ZONE</span>
+                                            </div>
+                                          );
+                                      }
+                                      return null;
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "1.5rem" }}>
+                           <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "16px", padding: "1.5rem" }}>
+                              <label style={{ color: "#22c55e", fontSize: "0.80rem", display: "block", marginBottom: "1rem", fontWeight: 800, textTransform: "uppercase" }}>Complexity Summary</label>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                 <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "#64748b", fontSize: "0.85rem" }}>Total Repeats</span>
+                                    <span style={{ color: "white", fontWeight: 700 }}>{goAnalysis.repeats.length}</span>
+                                 </div>
+                                 {goAnalysis.issues.map((issue, i) => (
+                                   <div key={i} style={{ color: "#f43f5e", fontSize: "0.8rem", background: "rgba(244,63,94,0.03)", padding: "0.5rem", borderRadius: "8px" }}>• {issue}</div>
+                                 ))}
+                              </div>
+                           </div>
 
-                <button onClick={calcGeneOptimizer} style={{ background: "#22c55e", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 20px rgba(34, 197, 94, 0.4)" }}>
-                  <Zap size={18} fill="black" /> Optimize Gene
-                </button>
+                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                              <div style={{ gridColumn: "span 2" }}>
+                                <label style={{ color: "#94a3b8", fontSize: "0.80rem", display: "block", marginBottom: "0.5rem", fontWeight: 700 }}>Target Selection</label>
+                                <div style={{ display: "flex", gap: "0.5rem", background: "rgba(0,0,0,0.2)", padding: "0.3rem", borderRadius: "10px" }}>
+                                  {["ORF", "CDS", "NONE"].map(t => (
+                                    <button key={t} onClick={() => setGoType(t)} style={{ flex: 1, padding: "0.5rem", borderRadius: "8px", border: "none", background: goType === t ? "#22c55e" : "transparent", color: goType === t ? "black" : "#64748b", fontSize: "0.7rem", fontWeight: 800 }}>{t}</button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div style={{ background: "rgba(255,255,255,0.02)", padding: "1rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                <label style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: 800, display: "block", marginBottom: "0.5rem" }}>START (5')</label>
+                                <input type="number" value={goRange.start} onChange={e => setGoRange({...goRange, start: parseInt(e.target.value)})} style={{ background: "transparent", border: "none", color: "white", fontSize: "1.2rem", fontWeight: 800, width: "100%" }} />
+                                {goType === "ORF" && <div style={{ fontSize: "0.6rem", color: "#22c55e", marginTop: "0.2rem" }}>SCANS FOR NEXT ATG</div>}
+                              </div>
+                              <div style={{ background: "rgba(255,255,255,0.02)", padding: "1rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", opacity: goType === "ORF" ? 0.3 : 1 }}>
+                                <label style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: 800, display: "block", marginBottom: "0.5rem" }}>END (3')</label>
+                                <input type="number" value={goRange.end} onChange={e => setGoRange({...goRange, end: parseInt(e.target.value)})} style={{ background: "transparent", border: "none", color: "white", fontSize: "1.2rem", fontWeight: 800, width: "100%" }} disabled={goType === "ORF"} />
+                                <div style={{ fontSize: "0.6rem", color: "#64748b", marginTop: "0.2rem" }}>{goRange.end - goRange.start + 1} bp</div>
+                              </div>
+                              <button onClick={() => { calcGeneTranslation(); setGoStep(2); }} style={{ gridColumn: "span 2", background: "white", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 900, cursor: "pointer", boxShadow: "0 0 20px rgba(255,255,255,0.1)" }}>PREVIEW TRANSLATION & PROCEED</button>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {goStep === 2 && (
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                      <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.05)", padding: "2rem", overflowX: "auto" }}>
+                          <div style={{ minWidth: "1150px" }}>
+                            {goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase().match(/.{1,80}/g)?.map((chunk, rowIdx) => (
+                              <div key={rowIdx} style={{ marginBottom: "4rem", position: "relative" }}>
+                                {/* Ticks */}
+                                <div style={{ display: "flex", height: "15px", marginBottom: "4px" }}>
+                                  {chunk.split('').map((_, i) => (
+                                    <div key={i} style={{ width: "14px", borderLeft: (rowIdx*80+i+1) % 10 === 0 ? "1px solid #475569" : "none", position: "relative", flexShrink: 0 }}>
+                                      {(rowIdx*80+i+1) % 10 === 0 && <span style={{ position: "absolute", top: "-12px", left: "-6px", fontSize: "10px", color: "#64748b" }}>{rowIdx*80+i+1}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                                {/* Translation Track (Selected region) */}
+                                <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", fontWeight: 800, height: "20px" }}>
+                                  {chunk.split('').map((_, i) => {
+                                      const globalIdx = rowIdx * 80 + i + 1;
+                                      const dnaClean = goDNA.replace(/[\n\r\t >0-9]/g, "").toUpperCase();
+                                      let codingStart = goRange.start;
+                                      if (goType === "ORF") {
+                                          const nextATG = dnaClean.indexOf("ATG", goRange.start - 1);
+                                          codingStart = nextATG !== -1 ? nextATG + 1 : -1;
+                                      }
+                                      
+                                      if (codingStart !== -1 && globalIdx >= codingStart && globalIdx <= goRange.end) {
+                                          const localOffset = globalIdx - codingStart;
+                                          if (localOffset % 3 === 0) {
+                                              const codon = dnaClean.substring(globalIdx - 1, globalIdx + 2);
+                                              const aa = GENETIC_CODE[codon] || " ";
+                                              return <div key={i} style={{ width: "42px", textAlign: "center", color: getRasMolColor(aa) }}>{aa}</div>;
+                                          }
+                                          if (localOffset % 3 !== 0) return null;
+                                      }
+                                      return <div key={i} style={{ width: "14px", flexShrink: 0 }}></div>;
+                                  })}
+                                </div>
+                                {/* Sequence */}
+                                <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "14px", fontWeight: 700, color: "white" }}>
+                                  {chunk.split('').map((char, i) => (
+                                    <div key={i} style={{ width: "14px", textAlign: "center", flexShrink: 0 }}>{char}</div>
+                                  ))}
+                                </div>
+                                {/* Repetition Bars */}
+                                <div style={{ position: "relative", height: "20px", marginTop: "8px" }}>
+                                  {goAnalysis.repeats.map((rep, i) => {
+                                      const start = rowIdx * 80;
+                                      const end = start + 80;
+                                      if (rep.start <= end && rep.end >= start + 1) {
+                                          const left = Math.max(0, rep.start - 1 - start) * 14;
+                                          const width = (Math.min(end, rep.end) - Math.max(start + 1, rep.start) + 1) * 14;
+                                          return <div key={i} style={{ position: "absolute", top: "0", left: `${left}px`, width: `${width}px`, height: "6px", background: "#f59e0b", borderRadius: "100px", opacity: 0.8 }} />;
+                                      }
+                                      return null;
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                      </div>
+                      <button onClick={() => setGoStep(3)} style={{ background: "#22c55e", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 20px rgba(34, 197, 94, 0.4)" }}>Verify & Configure Optimization</button>
+                    </motion.div>
+                )}
+
+                {goStep === 3 && (
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+                           {/* Column 1: Rules & Strategy */}
+                           <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                              <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "20px", padding: "1.5rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                 <label style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 800, textTransform: "uppercase", marginBottom: "1.5rem", display: "block" }}>Optimization Rules (Twist Protocol)</label>
+                                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.85rem", color: "#94a3b8" }}>
+                                    <div style={{ display: "flex", gap: "0.75rem" }}><span style={{ color: "#22c55e" }}>✓</span> Avoids repeats longer than 15bp</div>
+                                    <div style={{ display: "flex", gap: "0.75rem" }}><span style={{ color: "#22c55e" }}>✓</span> Eliminates homopolymer runs &gt; 10bp</div>
+                                    <div style={{ display: "flex", gap: "0.75rem" }}><span style={{ color: "#22c55e" }}>✓</span> Balances local GC content (35% - 65%)</div>
+                                    <div style={{ display: "flex", gap: "0.75rem" }}><span style={{ color: "#22c55e" }}>✓</span> Removes internal RBS and Sigma70 sites</div>
+                                    <div style={{ marginTop: "1rem", color: "#64748b", fontSize: "0.75rem", fontStyle: "italic" }}>
+                                       "Optimization reduces risk of secondary structures and assembly failure."
+                                    </div>
+                                 </div>
+                              </div>
+                              
+                              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                                 <div>
+                                   <label style={{ color: "white", fontSize: "0.85rem", display: "block", marginBottom: "0.5rem", fontWeight: 700 }}>Choose Codon Table</label>
+                                   <select value={goOrganism} onChange={e => setGoOrganism(e.target.value)} style={calcInputStyle}>
+                                     {Object.keys(OPT_TABLES).map(org => <option key={org} value={org}>{org}</option>)}
+                                   </select>
+                                 </div>
+                                 <div>
+                                   <label style={{ color: "white", fontSize: "0.85rem", display: "block", marginBottom: "0.5rem", fontWeight: 700 }}>Strategy</label>
+                                   <select value={goMode} onChange={e => setGoMode(e.target.value)} style={calcInputStyle}>
+                                     <option value="full">Maximum Expression (tRNA Awareness)</option>
+                                     <option value="minimal">Minimal Changes (as close as possible to the original DNA)</option>
+                                   </select>
+                                 </div>
+                              </div>
+                           </div>
+
+                           {/* Column 2: Specific Constraints */}
+                           <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                              <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "20px", padding: "1.5rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                 <label style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 800, textTransform: "uppercase", marginBottom: "1.5rem", display: "block" }}>Regions to Preserve</label>
+                                 <p style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "1rem" }}>Specify ranges that will not be modified (e.g., Promoters, Tags).</p>
+                                 <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+                                    <input type="number" placeholder="Start" value={goPreserveInput.start} onChange={e => setGoPreserveInput({...goPreserveInput, start: e.target.value})} style={calcInputStyle} />
+                                    <input type="number" placeholder="End" value={goPreserveInput.end} onChange={e => setGoPreserveInput({...goPreserveInput, end: e.target.value})} style={calcInputStyle} />
+                                    <button onClick={() => { if(goPreserveInput.start && goPreserveInput.end) setGoPreserved([...goPreserved, { start: parseInt(goPreserveInput.start), end: parseInt(goPreserveInput.end) }]); setGoPreserveInput({start: "", end: ""}); }} style={{ background: "#22c55e", color: "black", border: "none", borderRadius: "8px", padding: "0 1rem", fontWeight: 800, cursor: "pointer" }}>Add</button>
+                                 </div>
+                                 <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                                    {goPreserved.map((p, i) => (
+                                      <div key={i} style={{ display: "flex", justifyContent: "space-between", background: "rgba(255,255,255,0.02)", padding: "0.5rem 0.8rem", borderRadius: "8px", fontSize: "0.8rem" }}>
+                                         <span style={{ color: "white" }}>{p.start} - {p.end} <span style={{ color: "#475569" }}>({p.end - p.start + 1} bp)</span></span>
+                                         <button onClick={() => setGoPreserved(goPreserved.filter((_, idx) => idx !== i))} style={{ color: "#f43f5e", background: "none", border: "none", cursor: "pointer" }}>Remove</button>
+                                      </div>
+                                    ))}
+                                    {goPreserved.length === 0 && <div style={{ textAlign: "center", color: "#475569", fontSize: "0.8rem" }}>No regions selected</div>}
+                                 </div>
+                              </div>
+
+                              <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: "20px", padding: "1.5rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                 <label style={{ color: "#22c55e", fontSize: "0.75rem", display: "block", marginBottom: "1.5rem", fontWeight: 800, textTransform: "uppercase" }}>Avoid Creating Restriction Sites</label>
+                                 <div style={{ position: "relative" }}>
+                                   <input 
+                                     type="text" 
+                                     placeholder="Search enzyme (e.g. EcoRI)" 
+                                     value={goEnzSearch} 
+                                     onChange={e => setGoEnzSearch(e.target.value)} 
+                                     style={{ ...calcInputStyle, marginBottom: "0.5rem" }} 
+                                   />
+                                   {goEnzSearch && (
+                                     <div style={{ position: "absolute", top: "45px", left: 0, width: "100%", background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", zIndex: 10, maxHeight: "150px", overflowY: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+                                       {ALL_ENZYMES.filter(e => e.name.toLowerCase().includes(goEnzSearch.toLowerCase()) && !goForbidden.includes(e.name)).map(enz => (
+                                         <div key={enz.name} onClick={() => { setGoForbidden([...goForbidden, enz.name]); setGoEnzSearch(""); }} style={{ padding: "0.6rem 1rem", cursor: "pointer", display: "flex", justifyContent: "space-between", fontSize: "0.85rem", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                                            <span style={{ color: "white", fontWeight: 700 }}>{enz.name}</span>
+                                            <span style={{ color: "#475569", fontFamily: "monospace" }}>{enz.site}</span>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   )}
+                                 </div>
+                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                                   {goForbidden.map(name => (
+                                     <div key={name} style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", padding: "0.4rem 0.8rem", borderRadius: "8px", fontSize: "0.75rem", color: "#22c55e", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                       {name}
+                                       <button onClick={() => setGoForbidden(goForbidden.filter(n => n !== name))} style={{ background: "none", border: "none", color: "#f43f5e", cursor: "pointer", fontWeight: 800 }}>×</button>
+                                     </div>
+                                   ))}
+                                 </div>
+                              </div>
+
+                              <button onClick={calcGeneOptimizer} style={{ background: "#22c55e", color: "black", border: "none", borderRadius: "12px", padding: "1rem", fontWeight: 900, fontSize: "1rem", cursor: "pointer", boxShadow: "0 0 25px rgba(34, 197, 94, 0.4)" }}>START GENERATION Wizard</button>
+                           </div>
+                        </div>
+                   </motion.div>
+                )}
 
                 {goResult && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "1.5rem" }}>
-                       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: "16px", padding: "1.25rem", border: "1px solid rgba(255,255,255,0.05)" }}>
-                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-                                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>Optimized Sequence</span>
-                                <button onClick={() => { navigator.clipboard.writeText(goResult.optimized); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ color: "#22c55e", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: 700 }}>
-                                  {copied ? "Copied!" : "Copy Optimized DNA"}
-                                </button>
+                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+                    <div style={{ background: "rgba(15, 23, 42, 0.6)", borderRadius: "24px", border: "1px solid rgba(34,197,94,0.2)", padding: "2rem" }}>
+                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                             <div style={{ fontSize: "2rem", fontWeight: 900, color: "white" }}>{goResult.gc}% <span style={{ fontSize: "0.8rem", color: "#64748b" }}>GC</span></div>
+                             <div style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e", padding: "0.3rem 0.6rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 800 }}>MISSION OPTIMIZED</div>
+                             <div style={{ background: "rgba(59,130,246,0.1)", color: "#60a5fa", padding: "0.3rem 0.6rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 800 }}>{goResult.ntChanges} NT CHANGED</div>
+                             {goResult.sitesFixed > 0 && <div style={{ color: "#f59e0b", fontSize: "0.7rem", fontWeight: 700 }}>{goResult.sitesFixed} SURGICAL SWAPS PERFORMED</div>}
+                          </div>
+                          <div style={{ display: "flex", gap: "1rem" }}>
+                             <button onClick={() => { navigator.clipboard.writeText(goResult.optimized); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ color: "white", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", padding: "0.6rem 1.2rem", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 800 }}>
+                                {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "COPIED" : "COPY DNA"}
+                             </button>
+                             <button onClick={() => { 
+                                 const blob = new Blob([`>Optimized_Sequence\n${goResult.optimized}`], { type: "text/plain" });
+                                 const url = URL.createObjectURL(blob);
+                                 const a = document.createElement("a");
+                                 a.href = url;
+                                 a.download = "optimized_sequence.fasta";
+                                 a.click();
+                             }} style={{ color: "black", background: "#22c55e", border: "none", padding: "0.6rem 1.2rem", borderRadius: "10px", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 800 }}>
+                                <FileText size={16} /> EXPORT FASTA
+                             </button>
+                          </div>
+                       </div>
+
+                       <div style={{ border: "1px solid rgba(255,255,255,0.05)", borderRadius: "16px", background: "rgba(0,0,0,0.3)", padding: "1.5rem", marginBottom: "2rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
+                            <label style={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Optimization Sequence Comparison</label>
+                            <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.7rem" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}><div style={{ width: 8, height: 8, background: "#f43f5e", borderRadius: "2px" }}></div> Substitution</div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}><div style={{ width: 8, height: 8, background: "rgba(255,255,255,0.2)", borderRadius: "2px" }}></div> Conserved</div>
+                            </div>
+                        </div>
+                        <div style={{ maxHeight: "400px", overflow: "auto", paddingRight: "10px", background: "#020617", padding: "1rem", borderRadius: "8px" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "2rem", width: "fit-content" }}>
+                                {goResult.original.split('').reduce((acc, curr, i) => {
+                                    if (i % 60 === 0) acc.push(i);
+                                    return acc;
+                                }, []).map((start) => (
+                                    <div key={start} style={{ display: "flex", flexDirection: "column", gap: "8px", position: "relative" }}>
+                                        <div style={{ position: "absolute", left: "-30px", top: "50%", transform: "translateY(-50%)", fontSize: "0.6rem", color: "#334155", fontWeight: 900 }}>{start + 1}</div>
+                                        <div style={{ display: "flex", alignItems: "center" }}>
+                                            <div style={{ width: "80px", fontSize: "0.6rem", color: "#f59e0b", fontWeight: 800 }}>OPTIMIZED</div>
+                                            <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.95rem", color: "white", background: "rgba(255,255,255,0.02)", padding: "4px", borderRadius: "4px" }}>
+                                                {goResult.optimized.substring(start, start + 60).split('').map((char, i) => {
+                                                    const isDiff = goResult.optimized[start + i] !== goResult.original[start + i];
+                                                    return (
+                                                        <div key={i} style={{ width: "13px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", background: isDiff ? "rgba(244,63,94,0.3)" : "transparent", color: isDiff ? "#fb7185" : "inherit", borderRadius: "1px", fontWeight: isDiff ? 900 : 400 }}>
+                                                            {char}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center" }}>
+                                            <div style={{ width: "80px", fontSize: "0.6rem", color: "#64748b", fontWeight: 800 }}>ORIGINAL</div>
+                                            <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.95rem", color: "#475569", background: "rgba(0,0,0,0.2)", padding: "4px", borderRadius: "4px" }}>
+                                                {goResult.original.substring(start, start + 60).split('').map((char, i) => (
+                                                    <div key={i} style={{ width: "13px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        {char}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center" }}>
+                                            <div style={{ width: "80px" }}></div>
+                                            <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#1e293b" }}>
+                                                {goResult.original.substring(start, start + 60).split('').map((char, i) => (
+                                                    <div key={i} style={{ width: "13px", textAlign: "center", color: goResult.optimized[start + i] !== char ? "#f43f5e" : "transparent" }}>▲</div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                       </div>
+
+                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: "16px", padding: "1.2rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 800, marginBottom: "0.8rem", textTransform: "uppercase" }}>Optimization Delta Barcode</div>
+                             <div style={{ height: "40px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", display: "flex", overflow: "hidden" }}>
+                                {goResult.original.split('').map((char, i) => (
+                                    <div key={i} style={{ flex: 1, background: goResult.optimized[i] !== char ? "#f43f5e" : "transparent" }}></div>
+                                ))}
                              </div>
-                             <div style={{ fontFamily: "monospace", fontSize: "0.9rem", color: "#f1f5f9", background: "rgba(0,0,0,0.3)", padding: "1rem", borderRadius: "8px", maxHeight: "150px", overflowY: "auto", wordBreak: "break-all" }}>{goResult.optimized}</div>
                           </div>
-                          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: "16px", padding: "1.25rem", border: "1px solid rgba(255,255,255,0.05)" }}>
-                             <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", display: "block", marginBottom: "0.75rem" }}>Check Consistency (AA Sequence)</span>
-                             <div style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "#22c55e", letterSpacing: "0.1em", wordBreak: "break-all" }}>{goResult.aa}</div>
-                          </div>
-                       </div>
-                       <div style={{ background: goResult.issues.length ? "rgba(244,63,94,0.05)" : "rgba(34,197,94,0.05)", border: `1px solid ${goResult.issues.length ? "rgba(244,63,94,0.2)" : "rgba(34,197,94,0.2)"}`, borderRadius: "16px", padding: "1.25rem" }}>
-                          <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 800, textTransform: "uppercase", marginBottom: "0.75rem" }}>Synthesis Complexity</div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                             {goResult.issues.map((issue: string, i: number) => (
-                               <div key={i} style={{ fontSize: "0.85rem", color: "#f43f5e", display: "flex", gap: "0.5rem" }}>• {issue}</div>
-                             ))}
-                             {goResult.issues.length === 0 && <div style={{ color: "#22c55e", fontSize: "0.85rem", fontWeight: 600 }}>Sequence meets Synthesis standards.</div>}
-                          </div>
-                          <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                             <div style={{ fontSize: "0.65rem", color: "#475569", fontWeight: 700, marginBottom: "0.25rem" }}>FINAL GC%</div>
-                             <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#cbd5e1" }}>{goResult.gc}%</div>
+                          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: "16px", padding: "1.2rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 800, marginBottom: "0.8rem", textTransform: "uppercase" }}>Complexity Summary</div>
+                             <div style={{ display: "flex", gap: "1rem" }}>
+                                <div style={{ flex: 1, textAlign: "center" }}>
+                                    <div style={{ fontSize: "1.2rem", color: "white", fontWeight: 900 }}>0</div>
+                                    <div style={{ fontSize: "0.6rem", color: "#475569" }}>REMAINING REPEATS</div>
+                                </div>
+                                <div style={{ flex: 1, textAlign: "center" }}>
+                                    <div style={{ fontSize: "1.2rem", color: "#22c55e", fontWeight: 900 }}>PASS</div>
+                                    <div style={{ fontSize: "0.6rem", color: "#475569" }}>SYNTHESIS SCORE</div>
+                                </div>
+                             </div>
                           </div>
                        </div>
+                       
+                       {goResult.issues.length > 0 && (
+                          <div style={{ marginTop: "1.5rem", padding: "1rem", background: "rgba(244,63,94,0.1)", borderRadius: "12px", border: "1px solid rgba(244,63,94,0.2)" }}>
+                             <span style={{ fontSize: "0.75rem", color: "#f43f5e", fontWeight: 800, textTransform: "uppercase", display: "block", marginBottom: "0.5rem" }}>Synthesis Warnings</span>
+                             {goResult.issues.map((iss, k) => <div key={k} style={{ color: "#f43f5e", fontSize: "0.85rem" }}>• {iss}</div>)}
+                          </div>
+                       )}
                     </div>
                   </motion.div>
                 )}
               </div>
+
             ) : toolId === "ligation-calculator" ? (
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>

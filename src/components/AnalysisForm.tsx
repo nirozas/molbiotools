@@ -28,6 +28,7 @@ const SectionCard = ({ children, accent }: { children: React.ReactNode; accent: 
 
 export default function AnalysisForm({ onRun, loading, onClassChange }: AnalysisFormProps) {
     const [sequence, setSequence] = useState('');
+    const [sequenceName, setSequenceName] = useState('');
     const [organism, setOrganism] = useState<Organism>(ORGANISMS[0]);
     const [mhcClass, setMhcClass] = useState<'I' | 'II'>('I');
     const [lengths, setLengths] = useState<string[]>(['9']);
@@ -51,7 +52,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
             if (onClassChange) onClassChange('I');
         } else {
             setStrongThreshold(1.0); setWeakThreshold(5.0);
-            if (!lengths.some(l => ['13', '14', '15', '16'].includes(l))) setLengths(['15']);
+            if (!lengths.some(l => ['13', '14', '15', '16', '17'].includes(l))) setLengths(['15']);
             if (onClassChange) onClassChange('II');
         }
         setSelectedAlleles([]);
@@ -79,13 +80,18 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
         finally { setLoadingAlleles(false); }
     };
 
-    const filteredAlleles = useMemo(() =>
-        allAlleles.filter(a => 
-            organism.prefixes.some(p => a.toUpperCase().startsWith(p.toUpperCase())) && 
-            a.toLowerCase().includes(alleleQuery.toLowerCase())
-        ).slice(0, 120),
-        [allAlleles, organism, alleleQuery]
-    );
+    const filteredAlleles = useMemo(() => {
+        const query = alleleQuery.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return allAlleles.filter(a => {
+            const matchesPrefix = organism.prefixes.some(p => a.toUpperCase().startsWith(p.toUpperCase()));
+            if (!matchesPrefix) return false;
+            
+            if (!query) return true;
+            
+            const normalizedAllele = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return normalizedAllele.includes(query);
+        }).slice(0, 120);
+    }, [allAlleles, organism, alleleQuery]);
 
     const handleAutoDetect = async () => {
         if (/^[ATCGN\s]+$/i.test(sequence.trim())) {
@@ -96,7 +102,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onRun({ sequence: sequence.toUpperCase().replace(/\s/g, ''), mhcClass, organism: organism.id, lengths: lengths.join(','), alleles: selectedAlleles, strongThreshold, weakThreshold });
+        onRun({ sequenceName, sequence: sequence.toUpperCase().replace(/\s/g, ''), mhcClass, organism: organism.id, lengths: lengths.join(','), alleles: selectedAlleles, strongThreshold, weakThreshold });
     };
 
     const toggleLength = (len: string) => setLengths(prev => prev.includes(len) ? (prev.length > 1 ? prev.filter(l => l !== len) : prev) : [...prev, len]);
@@ -145,6 +151,18 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                         DETECT &amp; TRANSLATE DNA
                     </button>
                 </div>
+                <input
+                    type="text"
+                    value={sequenceName}
+                    onChange={e => setSequenceName(e.target.value)}
+                    placeholder="Sequence Name (optional)"
+                    style={{
+                        width: '100%', padding: '0.75rem', borderRadius: '8px',
+                        background: 'rgba(5,11,24,0.6)', color: '#cbd5e1',
+                        border: `1px solid ${accent}30`, outline: 'none', marginBottom: '1rem',
+                        fontSize: '0.85rem', boxSizing: 'border-box'
+                    }}
+                />
                 <textarea value={sequence} onChange={e => setSequence(e.target.value)} required placeholder="Enter amino acid or DNA sequence…"
                     style={{ width: '100%', minHeight: '110px', borderRadius: '10px', padding: '0.85rem', fontSize: '0.85rem', fontFamily: 'monospace', resize: 'vertical', background: 'rgba(5,11,24,0.85)', color: '#cbd5e1', border: `1px solid ${accent}30`, outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
                     onFocus={e => e.currentTarget.style.borderColor = accent}
@@ -155,7 +173,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                 <SectionCard accent={accent}>
                     <Label>Target Peptide Lengths</Label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                        {(isClassI ? ['8', '9', '10', '11', '12'] : ['13', '14', '15', '16']).map(l => {
+                        {(isClassI ? ['8', '9', '10', '11', '12'] : ['13', '14', '15', '16', '17']).map(l => {
                             const sel = lengths.includes(l);
                             return (
                                 <motion.button key={l} type="button" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -196,7 +214,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
                                 style={{ position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0, background: 'rgba(6,12,28,0.98)', border: `1px solid ${accent}40`, borderRadius: '12px', zIndex: 100, maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden', backdropFilter: 'blur(20px)', boxShadow: `0 20px 50px rgba(0,0,0,0.6)` }}
                                 className="no-scrollbar">
-                                <div style={{ padding: '0.5rem' }}>
+                                <div style={{ padding: '0.4rem' }}>
                                     {loadingAlleles ? (
                                         <div style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
                                             <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: accent, animation: 'spin 0.8s linear infinite', margin: '0 auto 0.5rem' }} />
@@ -207,14 +225,21 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                                             const sel = selectedAlleles.includes(a);
                                             return (
                                                 <button key={a} type="button"
-                                                    onClick={() => { toggleAllele(a); setAlleleQuery(''); setShowAlleleList(false); }}
-                                                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', textAlign: 'left', background: sel ? `${accent}25` : 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'background 0.2s', margin: '1px 0' }}
+                                                    onMouseDown={(e) => { 
+                                                        e.preventDefault(); // Keep focus on input
+                                                        toggleAllele(a); 
+                                                    }}
+                                                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', textAlign: 'left', background: sel ? `${accent}25` : 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.15s ease', margin: '1px 0' }}
                                                     onMouseEnter={e => { if (!sel) (e.currentTarget as HTMLElement).style.background = `${accent}12`; }}
                                                     onMouseLeave={e => { if (!sel) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
                                                     <span style={{ fontSize: '0.85rem', fontWeight: sel ? 700 : 500, color: sel ? accent : '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '0.5rem' }} title={a}>
                                                         {a}
                                                     </span>
-                                                    {sel && <Check size={14} style={{ color: accent, flexShrink: 0 }} />}
+                                                    {sel && (
+                                                        <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
+                                                            <Check size={14} style={{ color: accent, flexShrink: 0 }} />
+                                                        </motion.div>
+                                                    )}
                                                 </button>
                                             );
                                         })
@@ -225,13 +250,27 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                                                     <span style={{ color: '#fb7185' }}>Failed to load alleles.</span>
                                                     <span style={{ fontSize: '0.75rem' }}>Check if backend server is running on port 3001.</span>
                                                 </div>
-                                            ) : "No matching alleles found for this organism."}
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                                    <span>No matching alleles found.</span>
+                                                    <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Try removing special characters or checking the organism.</span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                                 {!loadingAlleles && filteredAlleles.length > 0 && (
-                                    <div style={{ padding: '0.5rem 0.85rem', borderTop: `1px solid rgba(148,163,184,0.1)`, fontSize: '0.7rem', color: '#475569', fontWeight: 600, background: 'rgba(0,0,0,0.2)' }}>
-                                        {filteredAlleles.length >= 120 ? 'Showing first 120 matches' : `${filteredAlleles.length} alleles available`} · click to select
+                                    <div style={{ padding: '0.6rem 0.85rem', borderTop: `1px solid rgba(148,163,184,0.1)`, fontSize: '0.7rem', color: '#475569', fontWeight: 600, background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>
+                                            {filteredAlleles.length >= 120 ? 'Showing first 120 matches' : `${filteredAlleles.length} alleles available`}
+                                        </span>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowAlleleList(false)}
+                                            style={{ color: accent, background: 'none', border: 'none', fontWeight: 800, cursor: 'pointer', padding: '2px 6px' }}
+                                        >
+                                            DONE
+                                        </button>
                                     </div>
                                 )}
                             </motion.div>

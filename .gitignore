@@ -4,6 +4,7 @@ node_modules_old/
 .next/
 .next_temp/
 .next_webpack/
+.next_dev/
 dist/
 build/
 archive_backend/backend/bugs.json

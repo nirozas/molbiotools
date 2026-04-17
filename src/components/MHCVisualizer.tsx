@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,7 +6,7 @@ import { Download, FileJson, Table, Layers, Zap, Filter, ZoomIn, ZoomOut, Image 
 import html2canvas from 'html2canvas';
 
 interface Peptide { sequence: string; start_position: number; end_position: number; affinity_score: string; rank: number; binder_level: string; allele: string; }
-interface MHCVisualizerProps { data: { original_sequence: string; peptides: Peptide[]; }; currentClass: 'I' | 'II'; }
+interface MHCVisualizerProps { data: { original_sequence: string; peptides: Peptide[]; }; currentClass: 'I' | 'II'; meta?: any; }
 
 const AA_COLORS: Record<string, { bg: string, text: string }> = {
     'D': { bg: '#E60A0A', text: '#FFFFFF' }, 'E': { bg: '#E60A0A', text: '#FFFFFF' },
@@ -25,7 +25,7 @@ const getAAColor = (aa: string) => AA_COLORS[aa.toUpperCase()] || { bg: '#808080
 const BASE_CHAR_WIDTH = 24;
 const TRACK_HEIGHT = 20;
 
-export default function MHCVisualizer({ data, currentClass }: MHCVisualizerProps) {
+export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualizerProps) {
     const { original_sequence, peptides } = data;
     const [hoveredPeptide, setHoveredPeptide] = useState<Peptide | null>(null);
     const [selectedAlleleFilter, setSelectedAlleleFilter] = useState<string>('All');
@@ -158,6 +158,19 @@ export default function MHCVisualizer({ data, currentClass }: MHCVisualizerProps
 
                 <div style={{ padding:'1.5rem', overflowX:'auto', paddingTop: '3rem', paddingBottom: '2.5rem' }} className="custom-scroll">
                     <div ref={exportRef} style={{ position:'relative', minWidth:'max-content', background:'rgba(15,23,42,0.8)', padding:'1.5rem', borderRadius:'12px', boxSizing:'border-box' }}>
+                        {meta && (
+                            <div style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: `1px solid ${themeColor}30` }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f0f6ff', marginBottom: '0.4rem', letterSpacing: '0.02em' }}>
+                                    {meta.sequenceName ? meta.sequenceName : 'Untitled Sequence'}
+                                </div>
+                                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>
+                                    <span><span style={{ color: '#475569' }}>DATE:</span> {new Date().toLocaleDateString()}</span>
+                                    <span><span style={{ color: '#475569' }}>CLASS:</span> MHC-{currentClass}</span>
+                                    <span><span style={{ color: '#475569' }}>ORGANISM:</span> {meta.organism}</span>
+                                    <span><span style={{ color: '#475569' }}>ALLELES:</span> {meta.alleles?.join(', ')}</span>
+                                </div>
+                            </div>
+                        )}
                         <div style={{ display:'flex', alignItems:'flex-end', gap:0, marginBottom:'1.5rem' }}>
                             <div style={{ width:'120px', flexShrink:0, fontSize:'0.7rem', fontWeight:700, color:'#64748b' }}>Sequence</div>
                             <div style={{ display:'flex', position: 'relative', marginTop:'1rem' }}>

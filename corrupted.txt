@@ -1,0 +1,20 @@
+﻿
+                               <div style={{ border: "1px solid rgba(255,255,255,0.05)", borderRadius: "16px", background: "rgba(0,0,0,0.3)", padding: "1.5rem", marginBottom: "2rem" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
+                                    <label style={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase" }}>Optimization Sequence Comparison</label>
+                                    <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.7rem" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}><div style={{ width: 8, height: 8, background: "#f43f5e", borderRadius: "2px" }}></div> Substitution</div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}><div style={{ width: 8, height: 8, backg                               <div style={{ maxHeight: "400px", overflow: "auto", paddingRight: "10px", background: "#020617", padding: "1rem", borderRadius: "8px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2rem", width: "fit-content" }}>
+                                        {goResult.original.split('').reduce((acc: any[], curr: string, i: number) => {
+                                            if (i % 60 === 0) acc.push(i);
+                                            return acc;
+                                        }, []).map((start: number) => (
+                                            <div key={start} style={{ display: "flex", flexDirection: "column", gap: "8px", position: "relative" }}>
+                                                <div style={{ position: "absolute", left: "-30px", top: "50%", transform: "translateY(-50%)", fontSize: "0.6rem", color: "#334155", fontWeight: 900 }}>{start + 1}</div>
+                                                <div style={{ display: "flex", alignItems: "center" }}>
+                                                    <div style={{ width: "80px", fontSize: "0.6rem", color: "#f59e0b", fontWeight: 800 }}>OPTIMIZED</div>
+                                                    <div style={{ display: "flex", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.95rem", color: "white", background: "rgba(255,255,255,0.02)", padding: "4px", borderRadius: "4px" }}>
+                                                        {goResult.optimized.substring(start, start + 60).split('').map((char: string, i: number) => {
+                                                            const isDiff = goResult.optimized[start+i] !== goResult.original[start+i];
+                                                            return (

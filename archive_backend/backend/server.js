@@ -58,6 +58,9 @@ app.post('/api/predict', async (req, res) => {
         const form = new FormData();
         if (mhcClass === 'I') {
             form.append('configfile', '/var/www/html/services/NetMHCpan-4.1/webface.cf');
+            if (lengths) {
+                form.append('len', lengths);
+            }
         } else {
             form.append('configfile', '/var/www/html/services/NetMHCIIpan-4.3/webface.cf');
         }
@@ -66,47 +69,57 @@ app.post('/api/predict', async (req, res) => {
         form.append('thrs', strongThreshold.toString());
         form.append('thrw', weakThreshold.toString());
 
+        console.log(`Submitting MHC Class ${mhcClass} prediction for ${alleles.length} alleles...`);
         const submitRes = await axios.post('https://services.healthtech.dtu.dk/cgi-bin/webface2.cgi', form, {
-            headers: form.getHeaders()
+            headers: form.getHeaders(),
+            timeout: 30000
         });
 
         let m = submitRes.data.match(/jobid=([^'"]+)/i);
         let jobId = m ? m[1] : null;
 
         if (!jobId) {
-            throw new Error("Could not extract DTU Job ID");
+            console.error("DTU Submission Response:", submitRes.data.substring(0, 500));
+            throw new Error("Could not extract DTU Job ID. Service might be busy or input invalid.");
         }
 
+        console.log(`Job created: ${jobId}. Polling for results...`);
         let dtuText = null;
 
-        // Poll for up to 60 seconds (30 tries)
-        for (let i = 0; i < 30; i++) {
+        // Poll for up to 120 seconds (60 tries)
+        for (let i = 0; i < 60; i++) {
             await new Promise(r => setTimeout(r, 2000));
             const pollRes = await axios.post('https://services.healthtech.dtu.dk/cgi-bin/webface2.cgi', `jobid=${jobId}&wait=20`, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
             if (!pollRes.data.includes("launchcheck('active'")) {
+                console.log(`Job ${jobId} finished.`);
                 let $ = cheerio.load(pollRes.data);
                 let textResult = $('pre').text();
-                // Alternatively they might have a download link, but usually standard text comes in <pre>
+                
                 if (textResult && textResult.includes("------------------")) {
                     dtuText = textResult;
                 } else {
                     let link = $('a[href$=".txt"]').attr('href');
                     if (link) {
+                        console.log(`Downloading result file from ${link}...`);
                         const fileRes = await axios.get('https://services.healthtech.dtu.dk' + link);
                         dtuText = fileRes.data;
                     } else {
-                        dtuText = pollRes.data; // fallback parse raw HTML
+                        // Sometimes the raw HTML contains the <pre> block but cheerio didn't pick it up 
+                        // as expected or it's formatted differently.
+                        dtuText = pollRes.data; 
                     }
                 }
                 break;
+            } else {
+                if (i % 5 === 0) console.log(`Polling job ${jobId}... (${i*2}s)`);
             }
         }
 
-        if (!dtuText) {
-            throw new Error("DTU API timed out or returned no text.");
+        if (!dtuText || dtuText.includes("launchcheck('active'")) {
+            throw new Error("DTU API timed out or returned no text. Try with a shorter sequence or fewer alleles.");
         }
 
         // Parse result
