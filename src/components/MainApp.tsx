@@ -7,7 +7,7 @@ import axios from 'axios';
 import AnalysisForm from './AnalysisForm';
 import MHCVisualizer from './MHCVisualizer';
 
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = "/api";
 
 interface Peptide {
     sequence: string;

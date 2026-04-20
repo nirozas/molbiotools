@@ -5,7 +5,12 @@ import { Bug, Send, X, Loader2, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 
-const API_BASE = "http://localhost:3001/api";
+const getApiBase = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") return window.location.origin + "/api";
+  return "http://localhost:3001/api";
+};
+const API_BASE = getApiBase();
 
 interface BugReportModalProps {
   isOpen: boolean;

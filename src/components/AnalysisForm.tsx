@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
 const ORGANISMS = [
-    { id: 'Human', name: 'Human (Homo sapiens)', prefixes: ['HLA-', 'DRB'] },
+    { id: 'Human', name: 'Human (Homo sapiens)', prefixes: ['HLA-', 'DRB', 'DQA', 'DQB', 'DPA', 'DPB'] },
     { id: 'Mouse', name: 'Mouse (Mus musculus)', prefixes: ['H-2-'] },
     { id: 'Macaque', name: 'Macaque (Macaca mulatta)', prefixes: ['Mamu-', 'Patr-', 'Gogo-'] },
     { id: 'Swine', name: 'Swine (Sus scrofa)', prefixes: ['SLA-'] },
@@ -14,7 +14,8 @@ const ORGANISMS = [
     { id: 'Dog', name: 'Dog (Canis familiaris)', prefixes: ['DLA-'] },
 ];
 
-const API_BASE = "http://localhost:3001/api";
+// All endpoints are now built-in Next.js API routes — no separate backend required.
+const API_BASE = "/api";
 
 interface Organism { id: string; name: string; prefixes: string[]; }
 interface AnalysisFormProps { onRun: (data: any) => void; loading: boolean; onClassChange?: (mhcClass: 'I' | 'II') => void; }
@@ -25,6 +26,9 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 const SectionCard = ({ children, accent }: { children: React.ReactNode; accent: string }) => (
     <div style={{ background: 'rgba(8,15,32,0.7)', border: `1px solid ${accent}25`, borderRadius: '16px', padding: '1.4rem' }}>{children}</div>
 );
+
+// Simple in-memory cache for allele lists to prevent disappearing data
+const alleleCache: Record<string, string[]> = {};
 
 export default function AnalysisForm({ onRun, loading, onClassChange }: AnalysisFormProps) {
     const [sequence, setSequence] = useState('');
@@ -56,8 +60,15 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
             if (onClassChange) onClassChange('II');
         }
         setSelectedAlleles([]);
-        setAllAlleles([]);
-        fetchAlleles();
+        
+        // Use cache if available, otherwise fetch
+        if (alleleCache[mhcClass]) {
+            setAllAlleles(alleleCache[mhcClass]);
+            setLoadingAlleles(false);
+        } else {
+            setAllAlleles([]);
+            fetchAlleles();
+        }
     }, [mhcClass]);
 
     useEffect(() => {
@@ -66,22 +77,35 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
-    const fetchAlleles = async () => {
+    const fetchAlleles = async (retryCount = 0) => {
         setLoadingAlleles(true);
         try { 
-            const res = await axios.get(`${API_BASE}/alleles`, { params: { mhcClass } }); 
-            if (Array.isArray(res.data)) {
+            const res = await axios.get(`${API_BASE}/alleles`, { 
+                params: { mhcClass },
+                timeout: 10000 // 10s timeout
+            }); 
+            if (Array.isArray(res.data) && res.data.length > 0) {
+                alleleCache[mhcClass] = res.data;
                 setAllAlleles(res.data); 
-            } else {
-                console.error("Alleles response is not an array:", res.data);
+            } else if (retryCount < 2) {
+                // If empty or not array, try again
+                setTimeout(() => fetchAlleles(retryCount + 1), 1000);
             }
         }
-        catch (err) { console.error("Failed to fetch alleles", err); }
+        catch (err) { 
+            console.error("Failed to fetch alleles", err);
+            if (retryCount < 2) {
+                setTimeout(() => fetchAlleles(retryCount + 1), 1000);
+            }
+        }
         finally { setLoadingAlleles(false); }
     };
 
     const filteredAlleles = useMemo(() => {
         const query = alleleQuery.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // If query starts with 'hla', allow matching alleles that omit the prefix (common for DRB)
+        const strippedQuery = query.startsWith('hla') ? query.slice(3) : query;
+
         return allAlleles.filter(a => {
             const matchesPrefix = organism.prefixes.some(p => a.toUpperCase().startsWith(p.toUpperCase()));
             if (!matchesPrefix) return false;
@@ -89,7 +113,8 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
             if (!query) return true;
             
             const normalizedAllele = a.toLowerCase().replace(/[^a-z0-9]/g, '');
-            return normalizedAllele.includes(query);
+            // Check both original query and stripped (no HLA-) version
+            return normalizedAllele.includes(query) || (strippedQuery.length > 0 && normalizedAllele.includes(strippedQuery));
         }).slice(0, 120);
     }, [allAlleles, organism, alleleQuery]);
 
@@ -248,7 +273,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                                             {allAlleles.length === 0 ? (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                                     <span style={{ color: '#fb7185' }}>Failed to load alleles.</span>
-                                                    <span style={{ fontSize: '0.75rem' }}>Check if backend server is running on port 3001.</span>
+                                                    <span style={{ fontSize: '0.75rem' }}>Please refresh the page and try again.</span>
                                                 </div>
                                             ) : (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>

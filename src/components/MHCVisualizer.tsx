@@ -35,19 +35,29 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
 
     const allelesPresent: string[] = [...new Set(peptides.map((p: Peptide) => p.allele))];
 
+    // Positions (1-indexed) where the original sequence has an X residue
+    const xPositions: number[] = original_sequence
+        .split('')
+        .reduce<number[]>((acc, aa, i) => { if (aa.toUpperCase() === 'X') acc.push(i + 1); return acc; }, []);
+
+    // Peptides that overlap any X position are hidden from the visualizer
+    const validPeptides = peptides.filter(
+        (p: Peptide) => !p.sequence.toUpperCase().includes('X') &&
+            !xPositions.some(xp => xp >= p.start_position && xp <= p.end_position)
+    );
+
     const alleleTracks = useMemo(() => {
         const tracks: Record<string, { layers: Peptide[][] }> = {};
         const allelesToProcess = selectedAlleleFilter === 'All' ? allelesPresent : [selectedAlleleFilter];
         
         allelesToProcess.forEach(a => {
-            const alleleHits = peptides.filter(p => p.allele === a).sort((x, y) => x.start_position - y.start_position);
+            // Use validPeptides so X-overlapping binders are excluded
+            const alleleHits = validPeptides.filter(p => p.allele === a).sort((x, y) => x.start_position - y.start_position);
             const layers: Peptide[][] = [];
             alleleHits.forEach(pep => {
                 let placed = false;
                 for (const layer of layers) {
                     const lastPep = layer[layer.length - 1];
-                    // If we show large export labels, we need more horizontal gap to prevent text overlap,
-                    // or we rely on the layers. We add 3 to require gap between peptides of same layer.
                     if (pep.start_position > lastPep.end_position + (showExportLabels ? 2 : 1)) {
                         layer.push(pep); placed = true; break;
                     }
@@ -57,11 +67,11 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
             tracks[a] = { layers };
         });
         return tracks;
-    }, [peptides, allelesPresent, selectedAlleleFilter, showExportLabels]);
+    }, [validPeptides, allelesPresent, selectedAlleleFilter, showExportLabels]);
 
     const binderCounts = {
-        strong: peptides.filter(p => p.binder_level === 'Strong' && (selectedAlleleFilter === 'All' || p.allele === selectedAlleleFilter)).length,
-        weak: peptides.filter(p => p.binder_level === 'Weak' && (selectedAlleleFilter === 'All' || p.allele === selectedAlleleFilter)).length
+        strong: validPeptides.filter(p => p.binder_level === 'Strong' && (selectedAlleleFilter === 'All' || p.allele === selectedAlleleFilter)).length,
+        weak: validPeptides.filter(p => p.binder_level === 'Weak' && (selectedAlleleFilter === 'All' || p.allele === selectedAlleleFilter)).length
     };
 
     const downloadCSV = () => {
@@ -171,32 +181,66 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
                                 </div>
                             </div>
                         )}
-                        <div style={{ display:'flex', alignItems:'flex-end', gap:0, marginBottom:'1.5rem' }}>
-                            <div style={{ width:'120px', flexShrink:0, fontSize:'0.7rem', fontWeight:700, color:'#64748b' }}>Sequence</div>
-                            <div style={{ display:'flex', position: 'relative', marginTop:'1rem' }}>
-                                {original_sequence.split('').map((_, i) => (
-                                    (i + 1) % 10 === 0 && (
-                                        <div key={`num-${i}`} style={{ position: 'absolute', top: '-18px', left: `${(i) * CHAR_WIDTH}px`, width: `${CHAR_WIDTH}px`, textAlign: 'center', fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>{i + 1}</div>
-                                    )
+                        <div style={{ position: 'relative' }}>
+                            {/* Vertical X-residue markers — runs through both ruler and tracks below */}
+                            <div style={{ position: 'absolute', top: 0, left: '120px', right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10 }}>
+                                {xPositions.map(xp => (
+                                    <React.Fragment key={`x-marker-group-${xp}`}>
+                                        <div 
+                                            style={{
+                                                position: 'absolute',
+                                                top: '1rem',
+                                                bottom: 0,
+                                                left: `${(xp - 1) * CHAR_WIDTH + CHAR_WIDTH / 2 - 1}px`,
+                                                width: 0,
+                                                borderLeft: '2.5px dashed #f97316',
+                                                opacity: 0.7,
+                                            }}
+                                        />
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                top: '-0.2rem',
+                                                left: `${(xp - 1) * CHAR_WIDTH + CHAR_WIDTH / 2}px`,
+                                                transform: 'translateX(-50%)',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 900,
+                                                color: '#f97316',
+                                                letterSpacing: '0.05em',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >X</div>
+                                    </React.Fragment>
                                 ))}
-                                {original_sequence.length > 0 && <div style={{ position: 'absolute', top: '-18px', left: '0px', width: `${CHAR_WIDTH}px`, textAlign: 'center', fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>1</div>}
-                                
-                                {original_sequence.split('').map((aa, i) => {
-                                    const col = getAAColor(aa);
-                                    return (
-                                        <div key={i} style={{ width:`${CHAR_WIDTH}px`, display:'flex', flexDirection:'column', alignItems:'center' }}>
-                                            <div style={{ width:'100%', height:'22px', background:col.bg, color:col.text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.8rem', fontWeight:900, fontFamily:'monospace' }}>
-                                                {aa}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
                             </div>
-                        </div>
+
+                            <div style={{ display:'flex', alignItems:'flex-end', gap:0, marginBottom:'1.5rem' }}>
+                                <div style={{ width:'120px', flexShrink:0, fontSize:'0.7rem', fontWeight:700, color:'#64748b' }}>Sequence</div>
+                                <div style={{ display:'flex', position: 'relative', marginTop:'1rem' }}>
+                                    {original_sequence.split('').map((_, i) => (
+                                        (i + 1) % 10 === 0 && (
+                                            <div key={`num-${i}`} style={{ position: 'absolute', top: '-18px', left: `${(i) * CHAR_WIDTH}px`, width: `${CHAR_WIDTH}px`, textAlign: 'center', fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>{i + 1}</div>
+                                        )
+                                    ))}
+                                    {original_sequence.length > 0 && <div style={{ position: 'absolute', top: '-18px', left: '0px', width: `${CHAR_WIDTH}px`, textAlign: 'center', fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>1</div>}
+                                    
+                                    {original_sequence.split('').map((aa, i) => {
+                                        const col = getAAColor(aa);
+                                        return (
+                                            <div key={i} style={{ width:`${CHAR_WIDTH}px`, display:'flex', flexDirection:'column', alignItems:'center' }}>
+                                                <div style={{ width:'100%', height:'22px', background:col.bg, color:col.text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.8rem', fontWeight:900, fontFamily:'monospace' }}>
+                                                    {aa}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
 
                         <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem' }}>
-                            {Object.entries(alleleTracks).map(([allele, { layers }]) => (
-                                <div key={allele} style={{ display:'flex' }}>
+                            {Object.entries(alleleTracks).map(([allele, { layers }], index, array) => (
+                                <React.Fragment key={allele}>
+                                <div style={{ display:'flex' }}>
                                     <div style={{ width:'120px', flexShrink:0, fontSize:'0.75rem', fontWeight:800, color:'#e2e8f0', marginTop:'2px' }}>
                                         {allele}
                                     </div>
@@ -262,7 +306,12 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
                                         ))}
                                     </div>
                                 </div>
+                                {index < array.length - 1 && (
+                                    <div style={{ width: '100%', height: '3px', background: `${themeColor}70`, borderRadius: '2px', margin: '0.25rem 0' }} />
+                                )}
+                                </React.Fragment>
                             ))}
+                        </div>
                         </div>
                     </div>
                 </div>
