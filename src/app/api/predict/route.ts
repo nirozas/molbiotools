@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 
-// Allow up to 10 minutes for this route (long DTU polling)
-export const maxDuration = 600;
+// Allow up to 5 minutes (300s) for this route — maximum allowed for Vercel Hobby plan
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 const DTU_URL = "https://services.healthtech.dtu.dk/cgi-bin/webface2.cgi";
@@ -56,10 +56,10 @@ export async function POST(req: NextRequest) {
 
         console.log(`[MHC] Job submitted: ${jobId}`);
 
-        // ── Poll for result (up to ~9.5 min: 114 tries × 5 s) ─────────────
+        // ── Poll for result (up to ~4.7 min: 58 tries × 5 s) ─────────────
         let dtuText: string | null = null;
 
-        for (let i = 0; i < 114; i++) {
+        for (let i = 0; i < 58; i++) {
             await sleep(5000);
 
             const pollBody = new URLSearchParams({ jobid: jobId, wait: "20" });
