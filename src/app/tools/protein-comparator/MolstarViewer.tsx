@@ -38,11 +38,11 @@ export default function MolstarViewer({ accession, label }: MolstarViewerProps) 
         
         const options = {
           customData: {
-            url: `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-model_v4.cif`,
+            url: `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-model_v6.cif`,
             format: 'cif'
           },
           alphafoldView: true,
-          bgColor: { r: 15, g: 23, b: 42 }, // Tailwind slate-900
+          bgColor: { r: 255, g: 255, b: 255 }, // White background
           hideControls: true,
           landscape: true
         };
@@ -71,10 +71,10 @@ export default function MolstarViewer({ accession, label }: MolstarViewerProps) 
   return (
     <div className="w-full flex flex-col bg-slate-900 rounded-xl border border-slate-700/50 overflow-hidden">
       <div className="bg-slate-800/50 px-4 py-3 border-b border-slate-700/50">
-        <h3 className="text-sm font-semibold text-slate-300">{label} Structure (AlphaFold)</h3>
+        <h3 className="text-sm font-semibold text-slate-300">{accession} | AF_{accession} for {label}</h3>
       </div>
       
-      <div className="relative w-full aspect-square md:aspect-[4/3] bg-slate-900 flex items-center justify-center">
+      <div className="relative w-full aspect-square md:aspect-[4/3] bg-white flex items-center justify-center">
         {/* CSS for Molstar */}
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pdbe-molstar@3.2.0/build/pdbe-molstar-light.css" />
         {/* JS Script loaded once per page by Next.js */}

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "e237ee4f-471b-451e-89de-223708d64874",
+    "timestamp": "2026-08-27T03:33:56.130Z",
+    "userPrompt": "I want a tool to calculate Tm for primer and template",
+    "aiSuggestions": [
+      {
+        "name": "NEB Tm Calculator",
+        "url": "https://tmcalculator.neb.com/"
+      },
+      {
+        "name": "IDT OligoAnalyzer",
+        "url": "https://www.idtdna.com/calc/analyzer"
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "29ee5abe-d50c-4dd4-8580-3d0ecdcca4c4",
+    "timestamp": "2026-08-27T03:34:41.747Z",
+    "userPrompt": "do you have a Tm Calculator",
+    "aiSuggestions": [
+      {
+        "name": "NEB Tm Calculator",
+        "url": "https://tmcalculator.neb.com/"
+      },
+      {
+        "name": "IDT OligoAnalyzer",
+        "url": "https://www.idtdna.com/pages/tools/oligoanalyzer"
+      }
+    ],
+    "status": "open"
+  }
+]

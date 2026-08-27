@@ -34,6 +34,7 @@ import CategoryCard, { Category } from "./CategoryCard";
 import Navbar from "./Navbar";
 import { categories as categoryData } from "@/data/categories";
 import DonationSection from "./DonationSection";
+import AIFinder from "./AIFinder";
 
 const MolecularBackground = dynamic(() => import("./MolecularBackground"), {
   ssr: false,
@@ -100,7 +101,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+    <div style={{ minHeight: "85vh", background: "var(--bg-primary)" }}>
       <Navbar />
 
       {/* ==================== HERO SECTION ==================== */}
@@ -108,7 +109,7 @@ export default function HomePage() {
         className="hero-gradient"
         style={{
           position: "relative",
-          minHeight: "100vh",
+          minHeight: "85vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -209,36 +210,8 @@ export default function HomePage() {
             and immunoinformatics — designed for researchers, educators, and labs.
           </p>
 
-          {/* Search Bar */}
-          <div
-            style={{
-              position: "relative",
-              maxWidth: "600px",
-              margin: "0 auto 3rem",
-            }}
-          >
-            <Search
-              size={20}
-              style={{
-                position: "absolute",
-                left: "1.25rem",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#475569",
-                pointerEvents: "none",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search tools… e.g. 'BLAST', 'reverse complement', 'MHC binding'"
-              className="search-input"
-              style={{
-                width: "100%",
-                padding: "1rem 1.5rem 1rem 3.25rem",
-                fontSize: "0.95rem",
-              }}
-            />
-          </div>
+          {/* AI Tool Finder */}
+          <AIFinder />
 
           {/* CTA Buttons */}
           <div
@@ -256,50 +229,6 @@ export default function HomePage() {
             <button className="btn-secondary" onClick={() => setShowGuide(true)}>
               Quick Start Guide
             </button>
-          </div>
-
-          {/* Stats Row */}
-          <div
-            style={{
-              display: "flex",
-              gap: "1.5rem",
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {stats.map((s) => (
-              <div
-                key={s.label}
-                style={{
-                  textAlign: "center",
-                  padding: "0.75rem 1.25rem",
-                  background: "rgba(12,22,45,0.6)",
-                  border: "1px solid rgba(148,163,184,0.1)",
-                  borderRadius: "12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <div style={{ color: "#00d4ff" }}>{s.icon}</div>
-                <div
-                  style={{
-                    fontFamily: "Space Grotesk, sans-serif",
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    color: "#f0f6ff",
-                    lineHeight: 1,
-                  }}
-                >
-                  {s.value}
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 500 }}>
-                  {s.label}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -404,62 +333,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ==================== CATEGORIES SECTION ==================== */}
-      <section
-        id="categories"
-        style={{
-          padding: "6rem 3rem",
-          maxWidth: "100%",
-          margin: "0 auto",
-        }}
-      >
-        {/* Section Header */}
-        <div style={{ marginBottom: "4rem", textAlign: "center" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              color: "#00d4ff",
-              fontSize: "0.78rem",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              marginBottom: "1rem",
-              background: "rgba(0,212,255,0.06)",
-              padding: "0.4rem 1rem",
-              borderRadius: "20px",
-              border: "1px solid rgba(0,212,255,0.15)",
-            }}
-          >
-            <BarChart3 size={14} />
-            Tool Categories
-          </div>
-          <h2
-            style={{
-              fontFamily: "Space Grotesk, Inter, sans-serif",
-              fontSize: "clamp(1.8rem, 4vw, 2.75rem)",
-              fontWeight: 800,
-              color: "#f0f6ff",
-              letterSpacing: "-0.02em",
-              marginBottom: "1rem",
-            }}
-          >
-            Explore All Toolsets
-          </h2>
-          <p style={{ color: "#475569", fontSize: "1rem", maxWidth: "560px", margin: "0 auto" }}>
-            Click any category to expand its subcategories and tools. Built-in tools run in
-            your browser — external tools open in a new tab.
-          </p>
-        </div>
-
-        {/* Feature Banner: Cloning Viewer */}
+             {/* Feature Banner: Cloning Viewer */}
+      <section style={{ maxWidth: "1400px", margin: "3rem auto 1rem", padding: "0 1.5rem" }}>
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
           style={{
-            marginBottom: "3rem",
             background: "linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.05))",
             border: "1px solid rgba(0, 212, 255, 0.15)",
             borderRadius: "24px",
@@ -532,6 +412,56 @@ export default function HomePage() {
             Open Viewer <ArrowRight size={18} />
           </a>
         </motion.div>
+      </section>
+
+{/* ==================== CATEGORIES SECTION ==================== */}
+      <section
+        id="categories"
+        style={{
+          padding: "2rem 3rem 6rem",
+          maxWidth: "100%",
+          margin: "0 auto",
+        }}
+      >
+        {/* Section Header */}
+        <div style={{ marginBottom: "4rem", textAlign: "center" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              color: "#00d4ff",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              marginBottom: "1rem",
+              background: "rgba(0,212,255,0.06)",
+              padding: "0.4rem 1rem",
+              borderRadius: "20px",
+              border: "1px solid rgba(0,212,255,0.15)",
+            }}
+          >
+            <BarChart3 size={14} />
+            Tool Categories
+          </div>
+          <h2
+            style={{
+              fontFamily: "Space Grotesk, Inter, sans-serif",
+              fontSize: "clamp(1.8rem, 4vw, 2.75rem)",
+              fontWeight: 800,
+              color: "#f0f6ff",
+              letterSpacing: "-0.02em",
+              marginBottom: "1rem",
+            }}
+          >
+            Explore All Toolsets
+          </h2>
+          <p style={{ color: "#475569", fontSize: "1rem", maxWidth: "560px", margin: "0 auto" }}>
+            Click any category to expand its subcategories and tools. Built-in tools run in
+            your browser — external tools open in a new tab.
+          </p>
+        </div>
 
         {/* Category Grid */}
         <div
@@ -547,6 +477,65 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+
+
+
+      
+      {/* ==================== PLATFORM STATS ==================== */}
+      <section style={{ padding: '0 1.5rem 4rem', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ background: 'rgba(12,22,45,0.4)', border: '1px solid rgba(148,163,184,0.1)', borderRadius: '24px', padding: '2rem' }}>
+          <h3 style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2rem', fontWeight: 600 }}>Platform Metrics</h3>
+
+
+          {/* Stats Row */}
+          <div
+            style={{
+              display: "flex",
+              gap: "1.5rem",
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            {stats.map((s) => (
+              <div
+                key={s.label}
+                style={{
+                  textAlign: "center",
+                  padding: "0.75rem 1.25rem",
+                  background: "rgba(12,22,45,0.6)",
+                  border: "1px solid rgba(148,163,184,0.1)",
+                  borderRadius: "12px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <div style={{ color: "#00d4ff" }}>{s.icon}</div>
+                <div
+                  style={{
+                    fontFamily: "Space Grotesk, sans-serif",
+                    fontSize: "1.5rem",
+                    fontWeight: 800,
+                    color: "#f0f6ff",
+                    lineHeight: 1,
+                  }}
+                >
+                  {s.value}
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 500 }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== COMMUNITY & MANAGEMENT ==================== */}
+      <section style={{ padding: '0 1.5rem 6rem', maxWidth: '1400px', margin: '0 auto' }}>
+
 
         {/* ==================== SUBMIT A TOOL CTA BOX ==================== */}
         <motion.div
@@ -687,6 +676,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
+
       {/* ==================== ADMIN SECTION ==================== */}
       <section
         style={{
@@ -796,8 +786,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-
+      </section>
 
       <DonationSection />
 
