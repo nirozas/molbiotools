@@ -7,6 +7,7 @@ import {
   Shield,
   Calculator,
   Atom,
+  BarChart,
 } from "lucide-react";
 import { Category } from "@/components/CategoryCard";
 
@@ -22,6 +23,8 @@ export const categories: Category[] = [
       {
         name: "Sequence Analysis",
         tools: [
+          { name: "Gene & Isoform Explorer", description: "Fetch Genomic, cDNA, and CDS from Ensembl", type: "internal", href: "/tools/gene-explorer", badge: "NEW" },
+          { name: "Sequence Cleaner & Formatter", description: "Strip numbers, spaces, and format to FASTA", type: "internal", href: "/tools/sequence-cleaner", badge: "NEW" },
           { name: "Reverse Complement", description: "Generate reverse complement of a DNA sequence", type: "internal", href: "/tools/run/reverse-complement", badge: "NEW" },
           { name: "Gene Optimizer & Complexity", description: "Check synthesis complexity and optimize codons", type: "internal", href: "/tools/run/gene-optimizer", badge: "NEW" },
           { name: "Coding Capacity of DNA", description: "Convert between DNA length (bp), protein length (AA), and protein size (kDa)", type: "internal", href: "/tools/run/coding-capacity", badge: "NEW" },
@@ -33,6 +36,8 @@ export const categories: Category[] = [
       {
         name: "Restriction & Cloning",
         tools: [
+          { name: "Gibson / HiFi Assembly Calculator", description: "Calculate exact mass and volume for seamless cloning", type: "internal", href: "/tools/gibson-assembly", badge: "NEW" },
+          { name: "Site-Directed Mutagenesis (SDM)", description: "Design overlapping primers for QuikChange SDM", type: "internal", href: "/tools/sdm-designer", badge: "NEW" },
           { name: "In-Silico PCR Simulator", description: "Predict amplicons and generate protocols/programs", type: "internal", href: "/tools/run/pcr-simulator", badge: "NEW" },
           { name: "Restriction Enzyme Analyzer", description: "Find restriction sites in your sequence", type: "internal", href: "/tools/run/restriction-enzyme-analyzer" },
           { name: "Restriction Digest & Gel", description: "Simulate digest and visualize on agarose gel", type: "internal", href: "/tools/run/restriction-digest", badge: "NEW" },
@@ -67,6 +72,7 @@ export const categories: Category[] = [
       {
         name: "Transcription",
         tools: [
+          { name: "Gene & Isoform Explorer", description: "Fetch Genomic, cDNA, mRNA and CDS from Ensembl", type: "internal", href: "/tools/gene-explorer", badge: "NEW" },
           { name: "DNA to RNA Transcription", description: "Convert DNA template to mRNA sequence", type: "internal", href: "/tools/run/transcription" },
           { name: "ORF Finder", description: "Identify open reading frames in RNA", type: "internal", href: "/tools/run/orf-finder" },
           { name: "Codon Usage Table", description: "Analyze codon frequency in transcripts", type: "internal", href: "/tools/run/codon-usage" },
@@ -100,6 +106,8 @@ export const categories: Category[] = [
       {
         name: "Translation",
         tools: [
+          { name: "Gene & Isoform Explorer", description: "Fetch Transcript and Protein Sequences from Ensembl", type: "internal", href: "/tools/gene-explorer", badge: "NEW" },
+          { name: "Protein Sequence Comparator", description: "Compare proteins across sequences, structure, localization & PTMs", type: "internal", href: "/tools/protein-comparator", badge: "NEW" },
           { name: "Protein Translation", description: "Translate coding sequence to amino acids", type: "internal", href: "/tools/run/translation" },
           { name: "Reverse Translation", description: "Reverse-translate protein to DNA (+ codon opt.)", type: "internal", href: "/tools/run/rev-trans", badge: "NEW" },
           { name: "AA Notation Converter", description: "Switch between 1-letter, 3-letter, and full name notations", type: "internal", href: "/tools/run/aa-converter", badge: "NEW" },
@@ -214,6 +222,12 @@ export const categories: Category[] = [
         ],
       },
       {
+        name: "Experimental Design & Statistics",
+        tools: [
+          { name: "In Vivo Power Calculator", description: "Calculate sample sizes and statistical power for preclinical experiments", type: "internal", href: "/tools/power-calculator", badge: "NEW" },
+        ],
+      },
+      {
         name: "General Lab",
         tools: [
           { name: "Molarity Calculator", description: "Mass, MW and volume to molarity (M, mM, µM, nM)", type: "internal", href: "/tools/run/molarity-calculator", badge: "NEW" },
@@ -271,6 +285,39 @@ export const categories: Category[] = [
         tools: [
           { name: "Kraken2 Taxonomy", description: "Taxonomic classification of metagenomic reads", type: "external", href: "https://ccb.jhu.edu/software/kraken2/" },
           { name: "Functional Profiling", description: "HUMAnN3 pathway abundance from shotgun data", type: "external", href: "https://huttenhower.sph.harvard.edu/humann/" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "stats",
+    name: "Experimental Design & Statistics",
+    description: "Statistical power analysis and experimental group randomization",
+    colorClass: "cat-stats",
+    icon: <BarChart size={26} style={{ color: "var(--cat-color)" }} />,
+    totalTools: 2,
+    subcategories: [
+      {
+        name: "Study Design",
+        tools: [
+          { name: "In Vivo Power Calculator", description: "Calculate sample sizes and statistical power for preclinical experiments", type: "internal", href: "/tools/power-calculator", badge: "NEW" },
+          { name: "Randomize into Groups", description: "Randomly assign subjects into groups with stratified distributions", type: "internal", href: "/tools/randomize-groups", badge: "NEW" },
+          { name: "Statistical Test Selector", description: "Interactive decision tree to choose the correct statistical test", type: "internal", href: "/tools/stat-test-selector", badge: "NEW" },
+        ],
+      },
+      {
+        name: "Statistical Visualizers",
+        tools: [
+          { name: "Survival Analysis (Kaplan-Meier)", description: "Plot survival curves and calculate Log-rank p-values", type: "internal", href: "/tools/kaplan-meier", badge: "NEW" },
+          { name: "Dose-Response (IC50 / EC50)", description: "Fit 4-parameter logistic (4PL) regression curves", type: "internal", href: "/tools/ic50-calculator", badge: "NEW" },
+        ],
+      },
+      {
+        name: "Data Cleaning & Adjustment",
+        tools: [
+          { name: "Outlier Detection", description: "Identify outliers using Grubbs' test or Tukey's fences", type: "internal", href: "/tools/outlier-detector", badge: "NEW" },
+          { name: "False Discovery Rate (FDR)", description: "Calculate Benjamini-Hochberg adjusted q-values", type: "internal", href: "/tools/fdr-calculator", badge: "NEW" },
+          { name: "Synergy Calculator", description: "Calculate drug combination effects via Bliss Independence", type: "internal", href: "/tools/bliss-synergy", badge: "NEW" },
         ],
       },
     ],

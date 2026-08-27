@@ -1,0 +1,87 @@
+# Goal Description
+
+Expand the "Experimental Design & Statistics" suite by implementing the 6 requested bioinformatics and biostatistics tools. This will provide users with a comprehensive set of calculators and visualizers for survival analysis, dose-response curves, outlier detection, statistical test selection, multiple testing correction, and drug synergy.
+
+> [!WARNING]
+> Implementing 6 complex mathematical tools simultaneously is a massive undertaking. To ensure mathematical accuracy and high-quality UI/UX for each tool, I strongly recommend executing this plan in **phases**, starting with the highest-impact tools (Kaplan-Meier and IC50).
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Execution Strategy:** Because tools like IC50 (non-linear 4PL regression) and Kaplan-Meier (Log-rank test) require complex math and custom charting, should we implement them in phases (e.g., Phase 1: Navigation + IC50 + Kaplan Meier) to ensure they are thoroughly tested before moving to the smaller calculators?
+
+> [!NOTE]
+> **Math Libraries:** For complex curve fitting (like 4PL for IC50), implementing Levenberg-Marquardt optimization in pure TypeScript from scratch is possible but complex. Are you okay with me writing custom TypeScript mathematical solvers for these, as we did for the Variance Minimization engine?
+
+## Proposed Changes
+
+---
+
+### Navigation & Routing
+
+Add all 6 new tools to the central navigation and sidebar.
+
+#### [MODIFY] `categories.tsx` (file:///c:/Users/asnir/Documents/Projects%20Website/5.MolBioTools/src/data/categories.tsx)
+- Add the 6 tools to the `stats` category array.
+
+#### [MODIFY] `ToolSidebar.tsx` (file:///c:/Users/asnir/Documents/Projects%20Website/5.MolBioTools/src/components/ToolSidebar.tsx)
+- Add the 6 tools to the `stats` category array in `SIDEBAR_DATA`.
+
+---
+
+### Phase 1: High-Impact Visualizers
+
+#### [NEW] `kaplan-meier/page.tsx` (file:///c:/Users/asnir/Documents/Projects%20Website/5.MolBioTools/src/app/tools/kaplan-meier/page.tsx)
+- UI for pasting time-to-event data (Time, Status: 1=Event/0=Censored, Group).
+- Recharts implementation for a stepped survival curve.
+
+#### [NEW] `kaplan-meier/SurvivalLogic.ts` (file:///c:/Users/asnir/Documents/Projects%20Website/5.MolBioTools/src/components/kaplan-meier/SurvivalLogic.ts)
+- Kaplan-Meier product-limit estimator algorithm.
+- Log-rank (Mantel-Cox) test calculation for p-values.
+
+#### [NEW] `ic50-calculator/page.tsx` (file:///c:/Users/asnir/Documents/Projects%20Website/5.MolBioTools/src/app/tools/ic50-calculator/page.tsx)
+- UI for pasting Dose-Response data (Concentration, Response, Group).
+- Recharts implementation with a Log10 X-axis and sigmoidal curve overlay.
+
+#### [NEW] `ic50/CurveFitLogic.ts` (file:///c:/Users/asnir/Documents/Projects%20Website/5.MolBioTools/src/components/ic50/CurveFitLogic.ts)
+- 4-Parameter Logistic (4PL) regression solver.
+- Absolute and relative IC50 mathematical derivation.
+
+---
+
+### Phase 2: Data Cleaning & Adjustment Calculators
+
+#### [NEW] `outlier-detector/page.tsx` & `OutlierLogic.ts`
+- Table UI for pasting data.
+- Math engine for Grubbs' test (Extreme Studentized Deviate) and Tukey's Fences (1.5x IQR).
+
+#### [NEW] `fdr-calculator/page.tsx` & `FDRLogic.ts`
+- Paste list of p-values.
+- Algorithm to sort and apply Benjamini-Hochberg procedure to calculate q-values.
+
+#### [NEW] `bliss-synergy/page.tsx` & `BlissLogic.ts`
+- Simple input form for Drug A effect, Drug B effect, and Combo effect.
+- Mathematical calculation of expected additive effect and synergy scoring.
+
+---
+
+### Phase 3: Interactive Wizard
+
+#### [NEW] `stat-test-selector/page.tsx`
+- Interactive decision-tree UI (React state machine).
+- Recommends tests based on user answers (e.g., Normality, Paired vs Unpaired, Number of groups).
+
+## Verification Plan
+
+### Automated Tests
+- TypeScript strict checking for all new files.
+
+### Mathematical Verification
+- Validate the IC50 4PL solver against known GraphPad Prism output datasets.
+- Validate the Kaplan-Meier survival percentages and Log-Rank p-values against standard textbook datasets.
+- Validate FDR q-value outputs against R's `p.adjust(method="BH")`.
+
+### Manual Verification
+- Deploy locally and interact with every UI form.
+- Ensure charts render correctly and handle invalid/empty data gracefully.
+- Verify that responsive design and glass-card aesthetics match the existing site design.

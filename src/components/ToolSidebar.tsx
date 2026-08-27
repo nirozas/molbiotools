@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Home,
+  BarChart,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +35,8 @@ const SIDEBAR_DATA = [
       {
         name: "Sequence Analysis",
         tools: [
+          { name: "Gene & Isoform Explorer", href: "/tools/gene-explorer", type: "internal" },
+          { name: "Sequence Cleaner & Formatter", href: "/tools/sequence-cleaner", type: "internal" },
           { name: "Reverse Complement", href: "#", type: "internal" },
           { name: "GC Content Calculator", href: "#", type: "internal" },
           { name: "Sequence Statistics", href: "#", type: "internal" },
@@ -42,6 +45,8 @@ const SIDEBAR_DATA = [
       {
         name: "Restriction & Cloning",
         tools: [
+          { name: "Gibson / HiFi Assembly Calculator", href: "/tools/gibson-assembly", type: "internal" },
+          { name: "Site-Directed Mutagenesis (SDM)", href: "/tools/sdm-designer", type: "internal" },
           { name: "Restriction Enzyme Analyzer", href: "#", type: "internal" },
           { name: "Ligation Calculator", href: "#", type: "internal" },
           { name: "Primer Design (Primer3)", href: "https://primer3.ut.ee/", type: "external" },
@@ -73,6 +78,7 @@ const SIDEBAR_DATA = [
       {
         name: "Transcription",
         tools: [
+          { name: "Gene & Isoform Explorer", href: "/tools/gene-explorer", type: "internal" },
           { name: "DNA to RNA Transcription", href: "#", type: "internal" },
           { name: "ORF Finder", href: "#", type: "internal" },
           { name: "Codon Usage Table", href: "#", type: "internal" },
@@ -104,6 +110,8 @@ const SIDEBAR_DATA = [
       {
         name: "Translation",
         tools: [
+          { name: "Gene & Isoform Explorer", href: "/tools/gene-explorer", type: "internal" },
+          { name: "Protein Sequence Comparator", href: "/tools/protein-comparator", type: "internal" },
           { name: "Protein Translation", href: "/tools/run/translation", type: "internal" },
           { name: "Reverse Translation", href: "/tools/run/rev-trans", type: "internal" },
           { name: "AA Notation Converter", href: "/tools/run/aa-converter", type: "internal" },
@@ -273,6 +281,38 @@ const SIDEBAR_DATA = [
         tools: [
           { name: "Kraken2 Taxonomy", href: "https://ccb.jhu.edu/software/kraken2/", type: "external" },
           { name: "Functional Profiling", href: "#", type: "external" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "stats",
+    name: "Experimental Design & Statistics",
+    icon: BarChart,
+    color: "#f97316",
+    bg: "rgba(249,115,22,0.08)",
+    subcategories: [
+      {
+        name: "Study Design",
+        tools: [
+          { name: "In Vivo Power Calculator", href: "/tools/power-calculator", type: "internal" },
+          { name: "Randomize into Groups", href: "/tools/randomize-groups", type: "internal" },
+          { name: "Statistical Test Selector", href: "/tools/stat-test-selector", type: "internal" },
+        ],
+      },
+      {
+        name: "Statistical Visualizers",
+        tools: [
+          { name: "Survival Analysis (Kaplan-Meier)", href: "/tools/kaplan-meier", type: "internal" },
+          { name: "Dose-Response (IC50 / EC50)", href: "/tools/ic50-calculator", type: "internal" },
+        ],
+      },
+      {
+        name: "Data Cleaning & Adjustment",
+        tools: [
+          { name: "Outlier Detection", href: "/tools/outlier-detector", type: "internal" },
+          { name: "False Discovery Rate (FDR)", href: "/tools/fdr-calculator", type: "internal" },
+          { name: "Synergy Calculator", href: "/tools/bliss-synergy", type: "internal" },
         ],
       },
     ],

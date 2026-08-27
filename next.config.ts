@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   typedRoutes: false,
+  // Optimize imports from large packages to reduce bundle size and speed up loading
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "framer-motion",
+    ],
+  },
 };
 
 export default nextConfig;

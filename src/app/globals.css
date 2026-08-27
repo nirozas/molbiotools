@@ -165,6 +165,7 @@ body {
 .cat-calc   { --cat-color: #6366f1; --cat-bg: rgba(99, 102, 241, 0.08); }
 .cat-microbe { --cat-color: #0d9488; --cat-bg: rgba(13, 148, 136, 0.08); }
 .cat-immuno { --cat-color: #ec4899; --cat-bg: rgba(236, 72, 153, 0.08); }
+.cat-stats  { --cat-color: #3b82f6; --cat-bg: rgba(59, 130, 246, 0.08); }
 
 .category-card-inner {
   border-top: 3px solid var(--cat-color);
