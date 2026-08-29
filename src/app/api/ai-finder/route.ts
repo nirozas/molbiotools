@@ -5,8 +5,8 @@ import fs from 'fs';
 import path from 'path';
 
 // Initialize the Gemini API client and Resend
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const resend = new Resend(process.env.RESEND_API_KEY || '');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 import { categories } from '@/data/categories';
 
@@ -82,8 +82,9 @@ NEVER wrap your JSON response in markdown blocks like \`\`\`json. Return RAW val
       }
 
       // 2. Send email alert via Resend
-      try {
-        await resend.emails.send({
+      if (resend) {
+        try {
+          await resend.emails.send({
           from: 'onboarding@resend.dev',
           to: 'niroz.as@example.com', // Replace with your verified email
           subject: 'MolBioTools: New Feature Request / Missing Tool',
@@ -96,9 +97,12 @@ NEVER wrap your JSON response in markdown blocks like \`\`\`json. Return RAW val
             </ul>
             <p><small>View all reports at /admin/bug-handler</small></p>
           `
-        });
-      } catch (e) {
-        console.error("Failed to send Resend email", e);
+          });
+        } catch (e) {
+          console.error("Failed to send Resend email", e);
+        }
+      } else {
+        console.warn("RESEND_API_KEY not set. Skipping email alert.");
       }
     }
 
