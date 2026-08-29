@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY is not configured on the server. Please add it to your environment variables.' }, { status: 500 });
+    }
+
     const model = genAI.getGenerativeModel({
       model: 'gemini-3.6-flash',
       systemInstruction: `You are an expert Bioinformatics AI Assistant for MolBioTools.
