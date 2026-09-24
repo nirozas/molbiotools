@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, FileJson, Table, Layers, Zap, Filter, ZoomIn, ZoomOut, Image as ImageIcon } from 'lucide-react';
+import { Download, FileJson, Table, Layers, Zap, Filter, ZoomIn, ZoomOut, Image as ImageIcon, Camera } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface Peptide { sequence: string; start_position: number; end_position: number; affinity_score: string; rank: number; binder_level: string; allele: string; }
@@ -32,6 +32,9 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
     const [zoomLevel, setZoomLevel] = useState<number>(1);
     const [showExportLabels, setShowExportLabels] = useState<boolean>(false);
     const exportRef = useRef<HTMLDivElement>(null);
+    const combinedCountsRef = useRef<HTMLDivElement>(null);
+    const strongCountRef = useRef<HTMLDivElement>(null);
+    const weakCountRef = useRef<HTMLDivElement>(null);
 
     const allelesPresent: string[] = [...new Set(peptides.map((p: Peptide) => p.allele))];
 
@@ -103,6 +106,17 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
         }, 100);
     };
 
+    const exportElementAsImage = async (ref: React.RefObject<HTMLDivElement | null>, filename: string) => {
+        if (!ref.current) return;
+        try {
+            const canvas = await html2canvas(ref.current, { backgroundColor: '#0f172a', scale: 2 });
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) { console.error('Failed to export image', err); }
+    };
+
     const themeColor = currentClass === 'I' ? '#2563eb' : '#e11d48';
     const CHAR_WIDTH = BASE_CHAR_WIDTH * zoomLevel;
     const layerSpacing = showExportLabels ? 80 : 4; // Massively expand spacing for labels
@@ -131,16 +145,27 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
                     </div>
                 </div>
 
-                <div style={{ display:'flex', gap:'1.5rem', flex:'2' }}>
-                    {[
-                        { label: 'Strong Binders', val: binderCounts.strong, col: '#f472b6' }, 
-                        { label: 'Weak Binders', val: binderCounts.weak, col: '#86efac' }
-                    ].map((s,i) => (
-                        <div key={i} style={{ background:'rgba(15,23,42,0.6)', border:`1px solid ${s.col}30`, borderRadius:'16px', padding:'1.5rem', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flex:1 }}>
-                            <div style={{ fontSize:'2.5rem', fontWeight:900, color:s.col, lineHeight:1 }}>{s.val}</div>
-                            <div style={{ fontSize:'0.75rem', fontWeight:800, color:'#94a3b8', letterSpacing:'0.1em', textTransform:'uppercase', marginTop:'0.5rem' }}>{s.label}</div>
-                        </div>
-                    ))}
+                <div style={{ display:'flex', flexDirection:'column', flex:'2', gap: '0.5rem' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <div style={{ fontSize:'0.75rem', fontWeight:800, color:'#94a3b8', letterSpacing:'0.1em', textTransform:'uppercase' }}>Binder Counts</div>
+                        <button onClick={() => exportElementAsImage(combinedCountsRef, 'combined_counts.png')} style={{ background:'transparent', border:'none', color:themeColor, cursor:'pointer', display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.7rem', fontWeight:800 }} title="Export Combined Counts">
+                            <Camera size={14} /> EXPORT BOTH
+                        </button>
+                    </div>
+                    <div ref={combinedCountsRef} style={{ display:'flex', gap:'1.5rem', flex:1, padding: '0.5rem', background: '#0f172a', borderRadius: '20px' }}>
+                        {[
+                            { label: 'Strong Binders', val: binderCounts.strong, col: '#f472b6', ref: strongCountRef, filename: 'strong_binders.png' }, 
+                            { label: 'Weak Binders', val: binderCounts.weak, col: '#86efac', ref: weakCountRef, filename: 'weak_binders.png' }
+                        ].map((s,i) => (
+                            <div key={i} ref={s.ref} style={{ background:'rgba(15,23,42,0.6)', border:`1px solid ${s.col}30`, borderRadius:'16px', padding:'1.5rem', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flex:1, position: 'relative' }}>
+                                <button onClick={() => exportElementAsImage(s.ref, s.filename)} style={{ position:'absolute', top:'0.5rem', right:'0.5rem', background:'transparent', border:'none', color:s.col, cursor:'pointer', opacity:0.7 }} title={`Export ${s.label}`}>
+                                    <Camera size={14} />
+                                </button>
+                                <div style={{ fontSize:'2.5rem', fontWeight:900, color:s.col, lineHeight:1 }}>{s.val}</div>
+                                <div style={{ fontSize:'0.75rem', fontWeight:800, color:'#94a3b8', letterSpacing:'0.1em', textTransform:'uppercase', marginTop:'0.5rem' }}>{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

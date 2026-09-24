@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Check, FileText, X, MousePointer2, Zap, Cpu, ChevronDown } from 'lucide-react';
+import { Search, Check, FileText, X, MousePointer2, Zap, Cpu, ChevronDown, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import html2canvas from 'html2canvas';
 
 const ORGANISMS = [
     { id: 'Human', name: 'Human (Homo sapiens)', prefixes: ['HLA-', 'DRB', 'DQA', 'DQB', 'DPA', 'DPB'] },
@@ -44,6 +45,18 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
     const [strongThreshold, setStrongThreshold] = useState(0.5);
     const [weakThreshold, setWeakThreshold] = useState(2.0);
     const alleleRef = useRef<HTMLDivElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const exportSettingsAsImage = async () => {
+        if (!formRef.current) return;
+        try {
+            const canvas = await html2canvas(formRef.current, { backgroundColor: '#060c18', scale: 2 });
+            const link = document.createElement('a');
+            link.download = 'mhc_settings.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) { console.error('Failed to export settings image', err); }
+    };
 
     const isClassI = mhcClass === 'I';
     const accent = isClassI ? '#60a5fa' : '#fb7185';
@@ -135,8 +148,11 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
     const canSubmit = !loading && selectedAlleles.length > 0 && sequence.trim().length > 0;
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', position: 'relative', padding: '1rem', background: '#060c18', borderRadius: '20px' }}>
+            <button type="button" onClick={exportSettingsAsImage} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 10, background: 'transparent', border: 'none', color: accent, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.7rem', fontWeight: 800 }} title="Export Settings as PNG">
+                <Camera size={16} /> EXPORT PNG
+            </button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
                 {(['I', 'II'] as const).map(cls => {
                     const active = mhcClass === cls;
                     const ca = cls === 'I' ? '#60a5fa' : '#fb7185';
