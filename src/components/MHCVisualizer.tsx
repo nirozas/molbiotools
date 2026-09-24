@@ -154,15 +154,32 @@ export default function MHCVisualizer({ data, currentClass, meta }: MHCVisualize
                     </div>
                     <div ref={combinedCountsRef} style={{ display:'flex', gap:'1.5rem', flex:1, padding: '0.5rem', background: '#0f172a', borderRadius: '20px' }}>
                         {[
-                            { label: 'Strong Binders', val: binderCounts.strong, col: '#f472b6', ref: strongCountRef, filename: 'strong_binders.png' }, 
-                            { label: 'Weak Binders', val: binderCounts.weak, col: '#86efac', ref: weakCountRef, filename: 'weak_binders.png' }
+                            { label: 'Strong Binders', val: binderCounts.strong, col: '#f472b6', ref: strongCountRef, filename: 'strong_binders.png', level: 'Strong' }, 
+                            { label: 'Weak Binders', val: binderCounts.weak, col: '#86efac', ref: weakCountRef, filename: 'weak_binders.png', level: 'Weak' }
                         ].map((s,i) => (
-                            <div key={i} ref={s.ref} style={{ background:'rgba(15,23,42,0.6)', border:`1px solid ${s.col}30`, borderRadius:'16px', padding:'1.5rem', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flex:1, position: 'relative' }}>
+                            <div key={i} ref={s.ref} style={{ background:'rgba(15,23,42,0.6)', border:`1px solid ${s.col}30`, borderRadius:'16px', padding:'1.5rem', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', flex:1, position: 'relative', minHeight: '200px' }}>
                                 <button onClick={() => exportElementAsImage(s.ref, s.filename)} style={{ position:'absolute', top:'0.5rem', right:'0.5rem', background:'transparent', border:'none', color:s.col, cursor:'pointer', opacity:0.7 }} title={`Export ${s.label}`}>
                                     <Camera size={14} />
                                 </button>
-                                <div style={{ fontSize:'2.5rem', fontWeight:900, color:s.col, lineHeight:1 }}>{s.val}</div>
-                                <div style={{ fontSize:'0.75rem', fontWeight:800, color:'#94a3b8', letterSpacing:'0.1em', textTransform:'uppercase', marginTop:'0.5rem' }}>{s.label}</div>
+                                <div style={{ fontSize:'2.5rem', fontWeight:900, color:s.col, lineHeight:1, marginTop: '1rem' }}>{s.val}</div>
+                                <div style={{ fontSize:'0.75rem', fontWeight:800, color:'#94a3b8', letterSpacing:'0.1em', textTransform:'uppercase', marginTop:'0.5rem', marginBottom: '1rem' }}>{s.label}</div>
+                                
+                                <div style={{ width: '100%', fontSize: '0.65rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', paddingRight: '4px' }} className="custom-scroll">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${s.col}30`, paddingBottom: '4px', marginBottom: '2px' }}>
+                                        <span style={{ fontWeight: 800 }}>ALL ALLELES</span>
+                                        <span style={{ fontWeight: 800, color: s.col }}>{validPeptides.filter(p => p.binder_level === s.level).length}</span>
+                                    </div>
+                                    {allelesPresent.map(allele => {
+                                        const count = validPeptides.filter(p => p.binder_level === s.level && p.allele === allele).length;
+                                        if (count === 0) return null;
+                                        return (
+                                            <div key={allele} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                                                <span style={{ opacity: 0.9 }}>{allele}</span>
+                                                <span style={{ color: s.col, fontWeight: 700 }}>{count}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         ))}
                     </div>
