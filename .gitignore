@@ -9,3 +9,4 @@ dist/
 build/
 archive_backend/backend/bugs.json
 archive_backend/backend/submissions.json
+progress/

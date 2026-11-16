@@ -89,6 +89,10 @@ const SIDEBAR_DATA = [
         tools: [
           { name: "RNA Secondary Structure", href: "http://www.unafold.org/mfold/", type: "external" },
           { name: "miRNA Target Predictor", href: "https://www.targetscan.org/", type: "external" },
+          { name: "mRNA Designer", href: "/tools/run/mrna-designer", type: "internal" },
+          { name: "mRNA Comparer", href: "/tools/run/mrna-compare", type: "internal" },
+          { name: "mRNA 2D Structure", href: "/tools/run/mrna-structure", type: "internal" },
+          { name: "mRNA Analyzer Suite", href: "/tools/run/mrna-suite", type: "internal" },
         ],
       },
       {
@@ -96,6 +100,22 @@ const SIDEBAR_DATA = [
         tools: [
           { name: "lncRNA Analysis", href: "#", type: "internal" },
           { name: "siRNA Designer", href: "#", type: "internal" },
+        ],
+      },
+      {
+        name: "External Validation & Design",
+        tools: [
+          { name: "ViennaRNA RNAfold WebServer", href: "http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi", type: "external" },
+          { name: "LinearFold Web Server", href: "http://linearfold.org/", type: "external" },
+          { name: "forna (ViennaRNA)", href: "http://rna.tbi.univie.ac.at/forna/", type: "external" },
+          { name: "AREsite2", href: "http://rna.tbi.univie.ac.at/AREsite", type: "external" },
+          { name: "TIsigner", href: "https://tisigner.com", type: "external" },
+          { name: "Salis Lab RBS Calculator", href: "https://salislab.net/software/", type: "external" },
+          { name: "JCat (Codon Adaptation Tool)", href: "http://www.jcat.de/", type: "external" },
+          { name: "IDT Codon Optimization Tool", href: "https://www.idtdna.com/CodonOpt", type: "external" },
+          { name: "CAIcal / E-CAI (URV)", href: "http://genomes.urv.es/CAIcal/", type: "external" },
+          { name: "mRNAid (DichLab)", href: "https://mrnaid.dichlab.org/", type: "external" },
+          { name: "LinearDesign", href: "https://www.coderna.ai/jobs", type: "external" },
         ],
       },
     ],
@@ -116,6 +136,7 @@ const SIDEBAR_DATA = [
           { name: "Reverse Translation", href: "/tools/run/rev-trans", type: "internal" },
           { name: "AA Notation Converter", href: "/tools/run/aa-converter", type: "internal" },
           { name: "Protein Property Visualizer", href: "/tools/run/protein-viewer", type: "internal" },
+          { name: "Western Blot Gel Visualizer", href: "/tools/run/western-blot", type: "internal" },
           { name: "Amino Acid Properties", href: "#", type: "internal" },
         ],
       },

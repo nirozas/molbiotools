@@ -67,7 +67,7 @@ export const categories: Category[] = [
     description: "Transcription analysis, secondary structure, and RNA-seq utilities",
     colorClass: "cat-rna",
     icon: <Zap size={26} style={{ color: "var(--cat-color)" }} />,
-    totalTools: 14,
+    totalTools: 24,
     subcategories: [
       {
         name: "Transcription",
@@ -83,6 +83,10 @@ export const categories: Category[] = [
         tools: [
           { name: "RNA Secondary Structure", description: "Predict mRNA folding and free energy (Mfold)", type: "external", href: "http://www.unafold.org/mfold/" },
           { name: "miRNA Target Predictor", description: "Find miRNA binding sites in 3' UTR", type: "external", href: "https://www.targetscan.org/" },
+          { name: "mRNA Designer", description: "Up to 10 optimized mRNAs (codons + organism UTR library) with full parameters", type: "internal", href: "/tools/run/mrna-designer", badge: "NEW" },
+          { name: "mRNA Comparer", description: "Compare 2-10 mRNAs; best for stability, translation & overall", type: "internal", href: "/tools/run/mrna-compare", badge: "NEW" },
+          { name: "mRNA 2D Structure", description: "Fold, draw and analyze mRNA secondary structure", type: "internal", href: "/tools/run/mrna-structure", badge: "NEW" },
+          { name: "mRNA Analyzer Suite", description: "Stability, translation potential & organism-specific codon optimization (in-browser)", type: "internal", href: "/tools/run/mrna-suite", badge: "NEW" },
           { name: "mRNA Optimization", description: "Folding, stability & translation potential (via dichlab)", type: "internal", href: "/tools/run/mrna-optimization", badge: "NEW" },
         ],
       },
@@ -93,6 +97,22 @@ export const categories: Category[] = [
           { name: "siRNA Designer", description: "Design effective siRNA for gene silencing", type: "internal", href: "/tools/run/sirna-designer", badge: "BETA" },
         ],
       },
+      {
+        name: "External Validation & Design",
+        tools: [
+          { name: "ViennaRNA RNAfold WebServer", description: "Predict Turner-2004 MFE structures, dot-bracket & base-pair probabilities", type: "external", href: "http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi" },
+          { name: "LinearFold Web Server", description: "Fast linear-time RNA secondary structure folding for multi-kilobase mRNAs", type: "external", href: "http://linearfold.org/" },
+          { name: "forna (ViennaRNA)", description: "Interactive force-directed 2D RNA structure visualization from dot-bracket", type: "external", href: "http://rna.tbi.univie.ac.at/forna/" },
+          { name: "AREsite2", description: "Scan AU-, GU- and U-rich mRNA decay motifs & RBP binding sites", type: "external", href: "http://rna.tbi.univie.ac.at/AREsite" },
+          { name: "TIsigner", description: "Validate & optimize 5′ translation initiation accessibility and opening energy", type: "external", href: "https://tisigner.com" },
+          { name: "Salis Lab RBS Calculator", description: "Thermodynamic prediction of translation initiation rates & 5′ leaders", type: "external", href: "https://salislab.net/software/" },
+          { name: "JCat (Codon Adaptation Tool)", description: "Organism-specific Codon Adaptation Index (CAI) & codon optimization", type: "external", href: "http://www.jcat.de/" },
+          { name: "IDT Codon Optimization Tool", description: "Optimize coding sequences & check synthesis complexity", type: "external", href: "https://www.idtdna.com/CodonOpt" },
+          { name: "CAIcal / E-CAI (URV)", description: "Calculate CAI, GC/GC3 & expected CAI across multiple sequences", type: "external", href: "http://genomes.urv.es/CAIcal/" },
+          { name: "mRNAid (DichLab)", description: "Joint mRNA codon + UTR optimization, folding MFE & 5_MFE scoring", type: "external", href: "https://mrnaid.dichlab.org/" },
+          { name: "LinearDesign", description: "Joint codon optimality & secondary-structure mRNA design software", type: "external", href: "https://www.coderna.ai/jobs" },
+        ],
+      },
     ],
   },
   {
@@ -101,7 +121,7 @@ export const categories: Category[] = [
     description: "Structure prediction, translation, motifs, and immunoinformatics",
     colorClass: "cat-protein",
     icon: <Layers size={26} style={{ color: "var(--cat-color)" }} />,
-    totalTools: 23,
+    totalTools: 24,
     subcategories: [
       {
         name: "Translation",
@@ -112,6 +132,7 @@ export const categories: Category[] = [
           { name: "Reverse Translation", description: "Reverse-translate protein to DNA (+ codon opt.)", type: "internal", href: "/tools/run/rev-trans", badge: "NEW" },
           { name: "AA Notation Converter", description: "Switch between 1-letter, 3-letter, and full name notations", type: "internal", href: "/tools/run/aa-converter", badge: "NEW" },
           { name: "Protein Property Visualizer", description: "Map RasMol colors, liability sites, and hydrophobicity on sequence", type: "internal", href: "/tools/run/protein-viewer", badge: "NEW" },
+          { name: "Western Blot Gel Visualizer", description: "Simulate up to 6 color-coded proteins on SDS-PAGE / W.B gel with kDa ladders", type: "internal", href: "/tools/run/western-blot", badge: "NEW" },
           { name: "Amino Acid Properties", description: "MW, pI, GRAVY score, extinction coefficient", type: "internal", href: "/tools/run/protein-stats" },
           { name: "Coding Capacity of DNA", description: "Convert between DNA length (bp), protein length (AA), and protein size (kDa)", type: "internal", href: "/tools/run/coding-capacity", badge: "NEW" },
         ],
