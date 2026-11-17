@@ -4,38 +4,52 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-const readAllelesFromFile = (filename: string): string[] => {
+const parseLines = (text: string): string[] =>
+    text
+        .split(/\r?\n/)
+        .map((a) => a.trim())
+        .filter((a) => Boolean(a) && !a.startsWith("<"));
+
+const readAllelesFromFile = async (filename: string, reqUrl: string): Promise<string[]> => {
     try {
         const filePath = path.join(process.cwd(), "public", filename);
-        if (!fs.existsSync(filePath)) {
-            console.error(`File not found: ${filePath}`);
-            return [];
+        if (fs.existsSync(filePath)) {
+            return parseLines(fs.readFileSync(filePath, "utf8"));
         }
-        return fs
-            .readFileSync(filePath, "utf8")
-            .split(/\r?\n/)
-            .map((a) => a.trim())
-            .filter(Boolean);
     } catch (err) {
-        console.error(`Error reading ${filename}:`, err);
-        return [];
+        console.error(`Error reading ${filename} from disk:`, err);
     }
+
+    // Fallback for edge/serverless runtimes (e.g. Cloudflare Workers) where public/ lives in static assets
+    try {
+        const assetUrl = new URL(`/${filename}`, reqUrl).toString();
+        const res = await fetch(assetUrl, { cache: "no-store" });
+        const ct = res.headers.get("content-type") || "";
+        if (res.ok && !ct.includes("text/html")) {
+            return parseLines(await res.text());
+        }
+    } catch (err) {
+        console.error(`Error fetching static asset ${filename}:`, err);
+    }
+
+    return [];
 };
 
 export async function GET(req: NextRequest) {
     const mhcClass = req.nextUrl.searchParams.get("mhcClass");
 
     if (mhcClass === "I") {
-        const alleles = readAllelesFromFile("mhci_alleles.txt");
+        const alleles = await readAllelesFromFile("mhci_alleles.txt", req.url);
         return NextResponse.json(alleles);
     }
     if (mhcClass === "II") {
-        const alleles = readAllelesFromFile("mhcii_alleles.txt");
+        const alleles = await readAllelesFromFile("mhcii_alleles.txt", req.url);
         return NextResponse.json(alleles);
     }
 
-    return NextResponse.json({
-        mhci: readAllelesFromFile("mhci_alleles.txt"),
-        mhcii: readAllelesFromFile("mhcii_alleles.txt"),
-    });
+    const [mhci, mhcii] = await Promise.all([
+        readAllelesFromFile("mhci_alleles.txt", req.url),
+        readAllelesFromFile("mhcii_alleles.txt", req.url),
+    ]);
+    return NextResponse.json({ mhci, mhcii });
 }

@@ -46,6 +46,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
     const [weakThreshold, setWeakThreshold] = useState(2.0);
     const alleleRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const activeClassRef = useRef<'I' | 'II'>(mhcClass);
 
     const exportSettingsAsImage = async () => {
         if (!formRef.current) return;
@@ -63,6 +64,7 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
     const accentSolid = isClassI ? '#1d4ed8' : '#be123c';
 
     useEffect(() => {
+        activeClassRef.current = mhcClass;
         if (mhcClass === 'I') {
             setStrongThreshold(0.5); setWeakThreshold(2.0);
             if (!lengths.some(l => ['8', '9', '10', '11', '12'].includes(l))) setLengths(['9']);
@@ -80,8 +82,9 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
             setLoadingAlleles(false);
         } else {
             setAllAlleles([]);
-            fetchAlleles();
+            fetchAlleles(mhcClass, 0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mhcClass]);
 
     useEffect(() => {
@@ -90,28 +93,49 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
-    const fetchAlleles = async (retryCount = 0) => {
+    const fetchAlleles = async (targetClass: 'I' | 'II' = mhcClass, retryCount = 0) => {
         setLoadingAlleles(true);
-        try { 
-            const res = await axios.get(`${API_BASE}/alleles`, { 
-                params: { mhcClass },
-                timeout: 10000 // 10s timeout
-            }); 
-            if (Array.isArray(res.data) && res.data.length > 0) {
-                alleleCache[mhcClass] = res.data;
-                setAllAlleles(res.data); 
-            } else if (retryCount < 2) {
-                // If empty or not array, try again
-                setTimeout(() => fetchAlleles(retryCount + 1), 1000);
+        let loaded: string[] = [];
+        try {
+            // 1. Direct static asset fetch (works on Cloudflare Workers static assets, Vercel, and local public/)
+            const file = targetClass === 'I' ? '/mhci_alleles.txt' : '/mhcii_alleles.txt';
+            const staticRes = await fetch(file, { cache: 'force-cache' });
+            const ct = staticRes.headers.get('content-type') || '';
+            if (staticRes.ok && !ct.includes('text/html')) {
+                const text = await staticRes.text();
+                loaded = text.split(/\r?\n/).map(a => a.trim()).filter(a => Boolean(a) && !a.startsWith('<'));
+            }
+        } catch (err) {
+            console.warn('Direct static allele fetch failed, falling back to /api/alleles', err);
+        }
+
+        if (loaded.length === 0) {
+            try {
+                const res = await axios.get(`${API_BASE}/alleles`, {
+                    params: { mhcClass: targetClass },
+                    timeout: 10000
+                });
+                if (Array.isArray(res.data) && res.data.length > 0) {
+                    loaded = res.data;
+                }
+            } catch (err) {
+                console.error('Failed to fetch alleles from /api/alleles', err);
             }
         }
-        catch (err) { 
-            console.error("Failed to fetch alleles", err);
-            if (retryCount < 2) {
-                setTimeout(() => fetchAlleles(retryCount + 1), 1000);
-            }
+
+        if (activeClassRef.current !== targetClass) return;
+
+        if (loaded.length > 0) {
+            alleleCache[targetClass] = loaded;
+            setAllAlleles(loaded);
+            setLoadingAlleles(false);
+        } else if (retryCount < 2) {
+            setTimeout(() => {
+                if (activeClassRef.current === targetClass) fetchAlleles(targetClass, retryCount + 1);
+            }, 1000);
+        } else {
+            setLoadingAlleles(false);
         }
-        finally { setLoadingAlleles(false); }
     };
 
     const filteredAlleles = useMemo(() => {
@@ -287,9 +311,15 @@ export default function AnalysisForm({ onRun, loading, onClassChange }: Analysis
                                     ) : (
                                         <div style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
                                             {allAlleles.length === 0 ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
                                                     <span style={{ color: '#fb7185' }}>Failed to load alleles.</span>
-                                                    <span style={{ fontSize: '0.75rem' }}>Please refresh the page and try again.</span>
+                                                    <button
+                                                        type="button"
+                                                        onMouseDown={(e) => { e.preventDefault(); fetchAlleles(mhcClass, 0); }}
+                                                        style={{ fontSize: '0.75rem', color: accent, background: `${accent}18`, border: `1px solid ${accent}40`, borderRadius: '8px', padding: '0.3rem 0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                                    >
+                                                        Retry
+                                                    </button>
                                                 </div>
                                             ) : (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
